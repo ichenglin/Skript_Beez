@@ -1,0 +1,13 @@
+function game_vanishHandler_player(player: player, vanish: boolean):
+	if {_vanish} is true:
+		set {-game_vanishHandler::%{_player}%_VANISH} to now
+	else:
+		delete {-game_vanishHandler::%{_player}%_VANISH}
+
+function game_vanishHandler_updateVanishedPlayers(player: player):
+	loop all players:
+		if loop-player is not {_player}:
+			if {-game_vanishHandler::%loop-player%_VANISH} is set:
+				hide loop-player from {_player}
+			else:
+				reveal loop-player to {_player}

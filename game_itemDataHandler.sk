@@ -1,0 +1,27 @@
+function game_itemDataHandler_itemType_getType(item: item) :: text:
+	set {_itemLore::*} to ({_item}'s lore) split by "||"
+	set {_itemType} to uncolored {_itemLore::1}
+	return {_itemType}
+
+function game_itemDataHandler_itemData_getDatas(item: item, datas: texts) :: texts:
+	set {_itemRawData::*} to game_itemDataHandler_itemData_getRawData({_item})
+	set {_dataAmount} to ((amount of {_itemRawData::*}) / 2)
+	loop {_datas::*}:
+		loop {_dataAmount} times:
+			set {_loopSlot} to ((loop-number * 2) - 1)
+			if {_itemRawData::%{_loopSlot}%} is {_datas::%loop-index%}:
+				set {_loopSlotData} to (loop-number * 2)
+				add {_itemRawData::%{_loopSlotData}%} to {_returnDatas::*}
+				if loop-number is not {_dataAmount}:
+					exit 1 loop
+	return {_returnDatas::*}
+
+function game_itemDataHandler_itemData_getRawData(item: item) :: texts:
+	set {_itemLore::*} to ({_item}'s lore) split by "||"
+	loop {_itemLore::*}:
+		set {_loopLine} to uncolored {_itemLore::%loop-index%}
+		if {_loopLine} contains ": ":
+			set {_loopLineSplit::*} to {_loopLine} split by ": "
+			replace all "%%" and "+" with "" in {_loopLineSplit::2}
+			add {_loopLineSplit::1} and {_loopLineSplit::2} to {_itemRawData::*}
+	return {_itemRawData::*}

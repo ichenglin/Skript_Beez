@@ -1,0 +1,74 @@
+function game_healthbarHandler_new(entity: entity):
+	set {_entityUUID} to ({_entity}'s UUID)
+	if {-game_healthbarHandler::%{_entityUUID}%_BAR} is set:
+		game_healthbarHandler_remove({_entity})
+	game_logHandler_sendLog("Health bar created for %{_entity}%.")
+	set {_barTypes::*} to "BAR" and "STAT" and "NAME"
+	loop (amount of {_barTypes::*}) times:
+		set {_loopType} to {_barTypes::%loop-number%}
+		spawn area effect cloud at (location 300 meters above {_entity}'s location)
+		set {-game_healthbarHandler::%{_entityUUID}%_%{_loopType}%} to last spawned entity
+		add "{Radius:0.0f,CustomName:""&f"",CustomNameVisible:1b,Duration:9999999,Particle:take}" to {-game_healthbarHandler::%{_entityUUID}%_%{_loopType}%}'s nbt
+	make {-game_healthbarHandler::%{_entityUUID}%_BAR} ride {_entity}
+	make {-game_healthbarHandler::%{_entityUUID}%_STAT} ride {-game_healthbarHandler::%{_entityUUID}%_BAR}
+	make {-game_healthbarHandler::%{_entityUUID}%_NAME} ride {-game_healthbarHandler::%{_entityUUID}%_STAT}
+
+function game_healthbarHandler_update(entity: entity):
+	set {_entityUUID} to ({_entity}'s UUID)
+	if {-game_healthbarHandler::%{_entityUUID}%_BAR} is not set:
+		stop
+	game_logHandler_sendLog("Health bar updated for %{_entity}%.")
+	set {_maxHealth} to game_healthHandler_getEntityMaximumHealth({_entity})
+	set {_health} to game_healthHandler_getEntityHealth({_entity})
+	set {_protection} to game_healthHandler_getEntityProtection({_entity})
+	set {_coloredBars} to ceil({_health} / {_maxHealth} * 10)
+	set {_barText} to ""
+	loop 10 times:
+		if {_coloredBars} >= loop-number:
+			set {_new} to "&a▊"
+		else:
+			set {_new} to "&c▊"
+		set {_barText} to "%{_barText}%%{_new}%"
+	if {_entity} is a player:
+		set {_damageDisplay} to (check [{_entity}'s tool is bow] ? {playerData::%{_entity}%_RANGED_DAMAGE} : {playerData::%{_entity}%_MELEE_DAMAGE})
+		if {_entity}'s group is not "default":
+			set {_prefix} to (uncolored {_entity}'s prefix)
+			set {_name} to "%{_prefix}%%{_entity}%"
+		else:
+			set {_name} to "%{_entity}%"
+	else:
+		set {_damageDisplay} to {-entityData::%{_entityUUID}%_DAMAGE}
+		set {_name} to "%{-entityData::%{_entityUUID}%_NAME}%"
+	add "{CustomName:""&e&l%{_name}%"",Duration:9999999}" to {-game_healthbarHandler::%{_entityUUID}%_NAME}'s nbt
+	add "{CustomName:""&c&l❤ %{_health}%/%{_maxHealth}% &6&l✠ %{_protection}%%% &a&l✦ %{_damageDisplay}%"",Duration:9999999}" to {-game_healthbarHandler::%{_entityUUID}%_STAT}'s nbt
+	add "{CustomName:""%{_barText}%"",Duration:9999999}" to {-game_healthbarHandler::%{_entityUUID}%_BAR}'s nbt
+
+function game_healthbarHandler_remove(entity: entity):
+	set {_entityUUID} to ({_entity}'s UUID)
+	game_logHandler_sendLog("Health bar removed for %{_entity}%.")
+	set {_barTypes::*} to "BAR" and "STAT" and "NAME"
+	loop (amount of {_barTypes::*}) times:
+		set {_loopType} to {_barTypes::%loop-number%}
+		if {-game_healthbarHandler::%{_entityUUID}%_%{_loopType}%} is set:
+			kill {-game_healthbarHandler::%{_entityUUID}%_%{_loopType}%}
+			delete {-game_healthbarHandler::%{_entityUUID}%_%{_loopType}%}
+
+function game_healthbarHandler_teleport(entity: entity, location: location):
+	set {_entityUUID} to ({_entity}'s UUID)
+	set {_hasBar} to (check [{-game_healthbarHandler::%{_entityUUID}%_BAR} is set])
+	set {_attempts} to 0
+	while (true):
+		if {_hasBar} is true:
+			make {-game_healthbarHandler::%{_entityUUID}%_BAR} to dismount from vehicle
+		add 1 to {_attempts}
+		teleport {_entity} to {_location}
+		set {_distance} to (distance between ({_entity}'s location) and {_location})
+		if (distance between ({_entity}'s location) and {_location}) <= 0.2:
+			exit 1 loop
+		else if {_attempts} > 20:
+			game_logHandler_sendLog("Failed to teleport %{_entity}% after 100 attempts. (CHECK DISTANCE = %{_distance}%)", true)
+			stop
+		wait 1 tick
+	game_logHandler_sendLog("Teleported %{_entity}% to %{_location}%. (HEALTH_BAR = %{_hasBar}%) (ATTEMPTS = %{_attempts}%)", (check [{_attempts} > 1]))
+	if {_hasBar} is true:
+		make {-game_healthbarHandler::%{_entityUUID}%_BAR} ride {_entity}

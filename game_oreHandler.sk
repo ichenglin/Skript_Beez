@@ -1,0 +1,13 @@
+function game_oreHandler_oreBreak(player: player, ore: block):
+	set {_oreType} to {_ore}'s type
+	set {_oreData::*} to game_dataHandler_oreBlocks_getData({_oreType})
+	if {playerData::%{_player}%_PERSONAL_BOOSTER_TYPE} is set:
+		set {_boosterData::*} to game_boosterHandler_getBoosterData({playerData::%{_player}%_PERSONAL_BOOSTER_TYPE})
+		if {_boosterData::1} is "ORE":
+			set {_amount} to ceil((item amount of {_oreData::1}) * {_boosterData::2})
+	if {_amount} is not set:
+		set {_amount} to (item amount of {_oreData::1})
+	give ({_amount} of {_oreData::1}) to {_player}
+	add 1 to {-game_playerStatsHandler::%{_player}%_MINED_BLOCKS}
+	game_questHandler_recordStat({_player}, "MINING_%{_oreType}%", 1)
+	game_playerDisplayHandler_sidebar_updatePlayerSidebar({_player})

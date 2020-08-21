@@ -1,0 +1,15 @@
+function game_codeHandler_checkPlayerCode(player: player, code: text) :: text:
+	set {_codeRedeemReturn} to stringDatasAPI_getData({playerData::%{_player}%_CODE_DATA}, {_code})
+	if {_codeRedeemReturn} is set:
+		return "CODE_ALREADY_REDEEMED"
+	if {-game_dataHandler::%{_code}%_CODE_STATUS} is not set:
+		return "CODE_NOT_EXIST"
+	else if {-game_dataHandler::%{_code}%_CODE_STATUS} is not "ACTIVE":
+		return "CODE_EXPIRED"
+	return "CODE_AVAILABLE"
+
+function game_codeHandler_playerRedeemCode(player: player, code: text):
+	if game_codeHandler_checkPlayerCode({_player}, {_code}) is not "CODE_AVAILABLE":
+		stop
+	set {playerData::%{_player}%_CODE_DATA} to stringDatasAPI_setData({_code}, "%now%", {playerData::%{_player}%_CODE_DATA})
+	give game_dataHandler_public_textToItems({-game_dataHandler::%{_code}%_CODE_REWARD}, {_player}) to {_player}

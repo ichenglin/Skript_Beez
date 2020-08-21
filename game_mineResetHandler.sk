@@ -1,0 +1,45 @@
+function game_mineResetHandler_resetAllAreas():
+	set {_oreTypes::*} to game_dataHandler_public_getOreTypes()
+#	set {_oreAreas::*} to "WOOD" and "STONE" and "COAL" and "IRON" and "GOLD" and "DIAMOND" and "EMERALD" and "REDSTONE"
+#	loop {_oreAreas::*}:
+	loop all players:
+		set {_location} to (location 0.55 meters above loop-player's location)
+		if game_dataHandler_public_checkInArea({_location}, "ORE_MINES") is true:
+			game_healthbarHandler_teleport(loop-player, {-game_dataHandler::SPAWN_LOCATION})	
+	loop {_oreTypes::*}:
+		game_mineResetHandler_resetArea({_oreTypes::%loop-index%})
+
+function game_mineResetHandler_resetArea(ore: item):
+	set {_areaPos::*} to game_dataHandler_oreArea_getPos({_ore})
+	game_mineResetHandler_fillArea({_areaPos::1}, {_areaPos::2}, {_ore})
+
+function game_mineResetHandler_fillArea(location1: location, location2: location, fillBlocks: items, blocksPerTick: number = 5000):
+	set {_blocks} to 0
+	set {_floors} to (1 + round(abs(({_location1}'s y coords) - ({_location2}'s y coords))))
+	if {_location1}'s x coords > {_location2}'s x coords:
+		set {_xChange} to -1
+	else:
+		set {_xChange} to 1
+	if {_location1}'s y coords > {_location2}'s y coords:
+		set {_yChange} to -1
+	else:
+		set {_yChange} to 1
+	if {_location1}'s z coords > {_location2}'s z coords:
+		set {_zChange} to -1
+	else:
+		set {_zChange} to 1
+	set {_currentLocation} to {_location1}
+	loop {_floors} times:
+		loop (floor(abs({_location1}'s z coords - {_location2}'s z coords)) + 1) times:
+			loop (floor(abs({_location1}'s x coords - {_location2}'s x coords)) + 1) times:
+				set {_randomID} to random integer between 1 and (amount of {_fillBlocks::*})
+				set block at {_currentLocation} to {_fillBlocks::%{_randomID}%}
+				add 1 to {_blocks}
+				set {_currentLocation}'s x coords to ({_currentLocation}'s x coords + {_xChange})
+			if {_blocks} >= {_blocksPerTick}:
+				wait 1 tick
+				set {_blocks} to 0
+			set {_currentLocation}'s x coords to {_location1}'s x coords
+			set {_currentLocation}'s z coords to ({_currentLocation}'s z coords + {_zChange})
+		set {_currentLocation} to {_location1}
+		set {_currentLocation}'s y coords to (({_currentLocation}'s y coords) - loop-number)

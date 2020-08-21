@@ -1,0 +1,57 @@
+# EXAMPLE
+#
+# Maximum Health: +10
+# Health Regeneration: +10
+# Melee Damage: +10
+# Ranged Damage: +10
+# Protection: +10%
+# Movement Speed: +10%
+# Critical Chance: +50%
+# Critical Power: +150%
+# Arrow Return: +50%
+# Luck: +50
+
+function game_equipmentHandler_updatePlayerEquipmentStats(player: player):
+	set {playerData::%{_player}%_HEALTH_MAX} to (100 + game_equipmentHandler_getPlayerEquipItemStat({_player}, "Maximum Health"))
+	set {playerData::%{_player}%_HEALTH} to (check [{playerData::%{_player}%_HEALTH} is set] ? {playerData::%{_player}%_HEALTH} : {playerData::%{_player}%_HEALTH_MAX})
+	set {playerData::%{_player}%_HEALTH} to (check [{playerData::%{_player}%_HEALTH} > {playerData::%{_player}%_HEALTH_MAX}] ? {playerData::%{_player}%_HEALTH_MAX} : {playerData::%{_player}%_HEALTH})
+	set {playerData::%{_player}%_HEALTH_REGENERATION} to (5 + game_equipmentHandler_getPlayerEquipItemStat({_player}, "Health Regeneration"))
+	set {_allDamage} to game_equipmentHandler_getPlayerEquipItemStat({_player}, "All Damage")
+	set {playerData::%{_player}%_MELEE_DAMAGE} to (1 + game_equipmentHandler_getPlayerEquipItemStat({_player}, "Melee Damage") + {_allDamage})
+	set {playerData::%{_player}%_RANGED_DAMAGE} to (game_equipmentHandler_getPlayerEquipItemStat({_player}, "Ranged Damage") + {_allDamage})
+	set {playerData::%{_player}%_PROTECTION} to game_equipmentHandler_getPlayerEquipItemStat({_player}, "Protection")
+	set {playerData::%{_player}%_MOVEMENT_SPEED} to (0.2 * ((100 + game_equipmentHandler_getPlayerEquipItemStat({_player}, "Movement Speed")) / 100))
+	set {playerData::%{_player}%_CRITICAL_CHANCE} to (5 + game_equipmentHandler_getPlayerEquipItemStat({_player}, "Critical Chance"))
+	set {playerData::%{_player}%_CRITICAL_POWER} to (100 + game_equipmentHandler_getPlayerEquipItemStat({_player}, "Critical Power"))
+	set {playerData::%{_player}%_ARROW_RETURN} to game_equipmentHandler_getPlayerEquipItemStat({_player}, "Arrow Return")
+	set {playerData::%{_player}%_LUCK} to game_equipmentHandler_getPlayerEquipItemStat({_player}, "Luck")
+	set {_checkStats::*} to "HEALTH_MAX" and "HEALTH_REGENERATION" and "MELEE_DAMAGE" and "RANGED_DAMAGE" and "PROTECTION" and "MOVEMENT_SPEED" and "CRITICAL_CHANCE" and "CRITICAL_POWER" and "ARROW_RETURN" and "LUCK"
+	loop (amount of {_checkStats::*}) times:
+		set {_loopStat} to {_checkStats::%loop-number%}
+		set {playerData::%{_player}%_%{_loopStat}%} to (check [{playerData::%{_player}%_%{_loopStat}%} >= 0] ? {playerData::%{_player}%_%{_loopStat}%} : 0)
+	set {_limitPercentageStats::*} to "HEALTH_REGENERATION" and "PROTECTION" and "CRITICAL_CHANCE" and "ARROW_RETURN" and "LUCK"
+	loop (amount of {_limitPercentageStats::*}) times:
+		set {_loopStat} to {_limitPercentageStats::%loop-number%}
+		set {playerData::%{_player}%_%{_loopStat}%} to (check [{playerData::%{_player}%_%{_loopStat}%} <= 100] ? {playerData::%{_player}%_%{_loopStat}%} : 100)	
+	game_playerDisplayHandler_playerActionbar({_player})
+	game_logHandler_sendLog("Equipment stats updated for %{_player}%.")
+	game_equipmentHandler_applyPlayerEquipmentStats({_player})
+	game_healthbarHandler_update({_player})
+
+function game_equipmentHandler_getPlayerEquipItemStat(player: player, stat: text) :: number:
+	set {_playerTool} to ({_player}'s tool)
+	if game_itemDataHandler_itemType_getType({_playerTool}) is "WEAPON":
+		add {_playerTool} to {_equipItems::*}
+	loop 4 times:
+		set {_armorSlot} to (35 + loop-number)
+		add (slot {_armorSlot} of {_player}'s inventory) to {_equipItems::*}
+	set {_playerOverallStat} to 0
+	loop {_equipItems::*}:
+		set {_equipmentStat::*} to game_itemDataHandler_itemData_getDatas({_equipItems::%loop-index%}, {_stat})
+		if {_equipmentStat::*} is set:
+			add ({_equipmentStat::1} parsed as number) to {_playerOverallStat}
+		delete {_equipmentStat::*}
+	return {_playerOverallStat}
+
+function game_equipmentHandler_applyPlayerEquipmentStats(player: player):
+	set {_player}'s walk speed to {playerData::%{_player}%_MOVEMENT_SPEED}

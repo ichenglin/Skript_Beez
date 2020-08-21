@@ -1,0 +1,6 @@
+function game_logHandler_sendLog(message: text, critical: boolean = false):
+	if {_critical} is true:
+		set {_color} to "&4⚠ "
+	else:
+		set {_color} to "&c"
+	send "%{_color}%[LOG: %now%] %{_message}%" to all players where [{-game_eventHandler::%player input%_LOG_TOGGLE} is set]

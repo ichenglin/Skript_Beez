@@ -1,0 +1,69 @@
+function game_randomEventHandler_airDrop_spawnButtonRandomLocation():
+	if {gameData::AIRDROP_BUTTON_LOCATION} is set:
+		set block at {gameData::AIRDROP_BUTTON_LOCATION} to air
+	set {_randomLocationID} to (random integer between 1 and {-game_dataHandler::AIR_DROP_LOCATION_AMOUNT})
+	set {gameData::AIRDROP_BUTTON_LOCATION} to {-game_dataHandler::AIR_DROP_LOCATION_%{_randomLocationID}%}
+	set block at {gameData::AIRDROP_BUTTON_LOCATION} to stone_button:5
+	game_logHandler_sendLog("Airdrop button has spawned at location %{gameData::AIRDROP_BUTTON_LOCATION}%.")
+
+function game_randomEventHandler_airDrop_startAirdrop(player: object, type: text, countdownSeconds: number = 30):
+	send "&a%{_player}% has summoned airdrop." to all players
+	loop {_countdownSeconds} times:
+		set {_countdown} to ({_countdownSeconds} + 1 - loop-number)
+		if ({_countdown} / 2) is floor({_countdown} / 2):
+			set {_title} to "&cAirdrop"
+		else:
+			set {_title} to "&6Airdrop"
+		send title {_title} with subtitle "&fAirdrops are landing in &a%{_countdown}% &fseconds" to all players for 2 seconds with 0 tick fadein and 0 tick fadeout
+		wait 1 second
+	send title "&cAirdrop" with subtitle "&fAirdrops are landing &6NOW" to all players for 3 seconds with 0 tick fadein and 0 tick fadeout
+	if {_type} is "METEOR":
+		game_randomEventHandler_airDrop_summonRandomLocation(10, 1, 20)
+
+function game_randomEventHandler_airDrop_summonRandomLocation(amount: number, delay: number, timeout: number):
+	set {_amount} to (check [{_amount} > {-game_dataHandler::AIR_DROP_LOCATION_AMOUNT}] ? {-game_dataHandler::AIR_DROP_LOCATION_AMOUNT} : {_amount})
+	loop {_amount} times:
+		while (true):
+			set {_randomLocationID} to (random integer between 1 and {-game_dataHandler::AIR_DROP_LOCATION_AMOUNT})
+			if {_usedID::%{_randomLocationID}%} is not set:
+				set {_usedID::%{_randomLocationID}%} to true
+				exit 1 loop
+		set {_randomLocation} to {-game_dataHandler::AIR_DROP_LOCATION_%{_randomLocationID}%}
+		game_randomEventHandler_airDrop_dropItem({_randomLocation}, 50)
+		send title "&7Airdrop" with subtitle "&fAirdrops remaining: &a%({_amount} - loop-number)%" to all players for ("%({_delay} + 1)% seconds" parsed as time span) with 0 tick fadein and 0 tick fadeout
+		if {_delay} is not 0:
+			wait ("%{_delay}% seconds" parsed as time span)
+	if {_timeout} is not 0:
+		wait ("%{_timeout}% seconds" parsed as time span)
+	loop {-game_randomEventHandler::*}:
+		set block at {-game_randomEventHandler::%loop-index%} to air
+
+function game_randomEventHandler_airDrop_dropItem(location: location, height: number = 25):
+	set {_spawnLocation} to (block at location {_height} meters above {_location})'s location
+	spawn falling note block at {_spawnLocation}
+	set {_airdrop} to last spawned entity
+	while (true):
+		if {_airdrop} is on ground:
+			exit 1 loop
+		pop ball coloured red and white fading to white and black at {_airdrop}'s location
+		drawDot count 50, particle "smoke", XYZ 0.2, 0, 0.2, center {_airdrop}'s location, visibleRange 100
+		wait 3 ticks
+	set {_airDropLocation} to ((block at {_airdrop}'s location)'s location)
+	set {_airDropLocationID} to game_randomEventHandler_airDrop_locationToText({_airDropLocation})
+	set {-game_randomEventHandler::%{_airDropLocationID}%} to {_airDropLocation}
+
+function game_randomEventHandler_airDrop_playerOpenAirdrop(player: player, airdropLocation: location):
+	set {_locationText} to game_randomEventHandler_airDrop_locationToText({_airdropLocation})
+	if {-game_randomEventHandler::%{_locationText}%} is not set:
+		stop
+	delete {-game_randomEventHandler::%{_locationText}%}
+	set block at {_airdropLocation} to air
+	give game_dataHandler_public_textToItems({-game_dataHandler::AIR_DROP_LOOT}, {_player}) to {_player}
+	send "&eYou have opened a airdrop!" to {_player}
+
+function game_randomEventHandler_airDrop_checkValid(location: location) :: boolean:
+	set {_locationText} to game_randomEventHandler_airDrop_locationToText({_location})
+	return (check [{-game_randomEventHandler::%{_locationText}%} is set])
+
+function game_randomEventHandler_airDrop_locationToText(location: location) :: text:
+	return "%{_location}'s x coords%_%{_location}'s y coords%_%{_location}'s z coords%"

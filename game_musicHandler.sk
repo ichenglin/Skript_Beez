@@ -1,0 +1,18 @@
+function game_musicHandler_playRepeat(player: player, startTime: date):
+	set {-game_musicHandler::%{_player}%_MUSIC} to {_startTime}
+	game_logHandler_sendLog("Started playing music for %{_player}%.")
+	while (true):
+		set {-game_musicHandler::%{_player}%_LAST_PLAY} to now
+		play sound "record.stal" with volume 99999 and pitch 2 at ({_player}'s location) for {_player}
+		while (true):
+			if {_player} is not online:
+				exit 2 loops
+			else if {-game_musicHandler::%{_player}%_MUSIC} is not {_startTime}:
+				exit 2 loops
+			else if (difference between {-game_musicHandler::%{_player}%_LAST_PLAY} and now) >= ("75 seconds" parsed as time span):
+				exit 1 loop
+			wait 10 ticks
+		game_logHandler_sendLog("Music repeat for %{_player}%.")
+	game_logHandler_sendLog("Stopped playing music for %{_player}%.")
+	if {-game_musicHandler::%{_player}%_MUSIC} is not set:
+		execute console command "stopsound %{_player}%"

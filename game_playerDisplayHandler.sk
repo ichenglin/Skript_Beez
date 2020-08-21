@@ -1,0 +1,87 @@
+function game_playerDisplayHandler_playerActionbar(player: player):
+	set {_damageDisplay} to (check [{_player}'s tool is bow] ? {playerData::%{_player}%_RANGED_DAMAGE} : {playerData::%{_player}%_MELEE_DAMAGE})
+	set {_boosterDisplay} to (check [{playerData::%{_player}%_PERSONAL_BOOSTER_TYPE} is set] ? "          &b&l✯ %game_boosterHandler_getBoosterName({playerData::%{_player}%_PERSONAL_BOOSTER_TYPE})%" : "")
+	send actionbar "&c&l❤ %ceil({playerData::%{_player}%_HEALTH})%/%{playerData::%{_player}%_HEALTH_MAX}%          &6&l✠ %{playerData::%{_player}%_PROTECTION}%%%          &a&l✦ %{_damageDisplay}%%{_boosterDisplay}%" to {_player}
+
+function game_playerDisplayHandler_playerHealth(player: player):
+	set {_remainHearts} to (ceil({playerData::%{_player}%_HEALTH} / {playerData::%{_player}%_HEALTH_MAX} * 20) / 2)
+	set {_player}'s health to {_remainHearts}
+
+function game_playerDisplayHandler_playerBlood(player: player):
+	loop 10 times:
+		set {_entityLocation} to {_player}'s location
+		set {_randomX} to ((random integer between -5 and 5) / 10)
+		set {_randomY} to ((random integer between 1 and 20) / 10)
+		set {_randomZ} to ((random integer between -5 and 5) / 10)
+		set {_entityLocation}'s x coords to ({_entityLocation}'s x coords + {_randomX})
+		set {_entityLocation}'s y coords to ({_entityLocation}'s y coords + {_randomY})
+		set {_entityLocation}'s z coords to ({_entityLocation}'s z coords + {_randomZ})
+		drawDot count 10, particle blockdust, material redstone block, center {_entityLocation}, visibleRange 100
+
+function game_playerDisplayHandler_playerTablist(player: player):
+	set ("%{_player}%" parsed as player)'s tablist name to "%{_player}'s prefix%%{_player}%"
+
+function game_playerDisplayHandler_sidebar_newPlayerSidebar(player: player, lines: number = 0):
+	set {_sidebarID} to "%{_player}'s UUID%_SIDEBAR"
+	if {_lines} <= 0:
+		set {_lines} to {-game_playerDisplayHandler::%{_player}%_SIDEBAR_LINES}
+	delete {-game_playerDisplayHandler::%{_player}%_SIDEBAR_LINES}
+	delete stylish scoreboard {_sidebarID}
+	create stylish scoreboard named {_sidebarID}
+	set title of stylish scoreboard {_sidebarID} to "&6&lBEEZ"
+	loop {_lines} times:
+		create a new id based score "%{_sidebarID}%_LINE_%(16 - loop-number)%" with text "LINE_%(16 - loop-number)%" slot (16 - loop-number) for stylish scoreboard {_sidebarID}
+	set {_player}'s stylish scoreboard to {_sidebarID}
+	set {-game_playerDisplayHandler::%{_player}%_SIDEBAR_LINES} to {_lines}
+
+function game_playerDisplayHandler_sidebar_updatePlayerSidebar(player: player):
+	set {_sidebarID} to "%{_player}'s UUID%_SIDEBAR"
+	set {_playerQuestProgressData::*} to game_questHandler_printQuestProgress({_player})
+	if {_playerQuestProgressData::*} is set:
+		set {_questAmount} to ((amount of {_playerQuestProgressData::*}) / 3)
+	else:
+		set {_questAmount} to 0
+	if {_questAmount} > 1:
+		set {_neededLines} to (9 + {_questAmount} * 2)
+	else:
+		set {_neededLines} to (12 + {_questAmount} * 2)
+	if {-game_playerDisplayHandler::%{_player}%_SIDEBAR_LINES} is not set:
+		stop
+	else if {-game_playerDisplayHandler::%{_player}%_SIDEBAR_LINES} is not {_neededLines}:
+		game_playerDisplayHandler_sidebar_newPlayerSidebar({_player}, {_neededLines})
+		wait 5 ticks
+	set text of id "%{_sidebarID}%_LINE_15" to "&7%now%"
+	set text of id "%{_sidebarID}%_LINE_14" to "&1"
+	set text of id "%{_sidebarID}%_LINE_13" to "&fUsername: &a%{_player}%"
+	if ({_player}'s group) is "default":
+		set {_rank} to "&7MEMBER"
+	else:
+		set {_rank} to ({_player}'s prefix)
+		replace all "[" and "]" with "" in {_rank}
+	set text of id "%{_sidebarID}%_LINE_12" to "&fRank: &a%{_rank}%"
+	set text of id "%{_sidebarID}%_LINE_11" to "&2"
+	if {_questAmount} > 0:
+		set text of id "%{_sidebarID}%_LINE_10" to "&fQuest: &6%{-game_dataHandler::%{-game_questHandler::%{_player}%_ACTIVE_QUEST}%_QUEST_NAME}%"
+		loop {_questAmount} times:
+			set {_loopDataID} to (loop-number * 3 - 2)
+			set {_loopLineID} to (11 - loop-number * 2)
+			set text of id "%{_sidebarID}%_LINE_%{_loopLineID}%" to "&f%{_playerQuestProgressData::%{_loopDataID}%}%"
+			set {_progressDataID} to ({_loopDataID} + 1)
+			set {_percentageDataID} to ({_loopDataID} + 2)
+			set {_randomColorList::*} to "&1" and "&2" and "&3"
+			set text of id "%{_sidebarID}%_LINE_%({_loopLineID} - 1)%" to "%{_randomColorList::%loop-number%}%&6%{_playerQuestProgressData::%{_progressDataID}%}% &f(&6%{_playerQuestProgressData::%{_percentageDataID}%}%&f)"
+	else:
+		set text of id "%{_sidebarID}%_LINE_10" to "&fQuest: &cNone"
+	set {_skipLineID} to (9 - {_questAmount} * 2)
+	set {_kdr} to ({-game_playerStatsHandler::%{_player}%_KILLS} / {-game_playerStatsHandler::%{_player}%_DEATHS})
+	set {_kdr} to (check [{-game_playerStatsHandler::%{_player}%_DEATHS} > 0] ? {_kdr} : {-game_playerStatsHandler::%{_player}%_KILLS})
+	set text of id "%{_sidebarID}%_LINE_%{_skipLineID}%" to "&3"
+	if {_questAmount} > 1:
+		set text of id "%{_sidebarID}%_LINE_%({_skipLineID} - 1)%" to "&fK: &a%{-game_playerStatsHandler::%{_player}%_KILLS}% &fD: &a%{-game_playerStatsHandler::%{_player}%_DEATHS}% &fKDR: &a%{_kdr}% &fB: &a%{-game_playerStatsHandler::%{_player}%_MINED_BLOCKS}%"
+		set text of id "%{_sidebarID}%_LINE_%({_skipLineID} - 2)%" to "&4"
+	else:
+		set text of id "%{_sidebarID}%_LINE_%({_skipLineID} - 1)%" to "&fTotal Kills: &a%{-game_playerStatsHandler::%{_player}%_KILLS}%"
+		set text of id "%{_sidebarID}%_LINE_%({_skipLineID} - 2)%" to "&fTotal Deaths: &a%{-game_playerStatsHandler::%{_player}%_DEATHS}%"
+		set text of id "%{_sidebarID}%_LINE_%({_skipLineID} - 3)%" to "&fPlayer KDR: &a%{_kdr}%"
+		set text of id "%{_sidebarID}%_LINE_%({_skipLineID} - 4)%" to "&fMined Blocks: &a%{-game_playerStatsHandler::%{_player}%_MINED_BLOCKS}%"
+		set text of id "%{_sidebarID}%_LINE_%({_skipLineID} - 5)%" to "&4"

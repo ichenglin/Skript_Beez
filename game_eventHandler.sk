@@ -1,0 +1,538 @@
+command /itemShop [<text>] [<text>]:
+	trigger:
+		if arg 2 is not "NPC_CLICK":
+			send "&cYou are not allowed to use this command!" to executor
+			stop
+		game_shopHandler_itemShop_gui(executor, (arg 1))
+
+command /bank [<text>] [<text>]:
+	trigger:
+		if arg 2 is not "NPC_CLICK":
+			send "&cYou are not allowed to use this command!" to executor
+			stop
+		game_bankHandler_gui(executor, (arg 1))
+
+command /quest [<text>] [<text>]:
+	trigger:
+		if arg 2 is not "NPC_CLICK":
+			send "&cYou are not allowed to use this command!" to executor
+			stop
+		game_questHandler_gui(executor, (arg 1))
+
+command /cancelQuest [<text>]:
+	trigger:
+		if {-game_questHandler::%executor%_ACTIVE_QUEST} is not set:
+			send "&cYou don't have any active quest!" to executor
+			stop
+		game_questHandler_guiAction(executor, "NULL", "CANCEL_QUEST")
+
+command /myStats [<text>]:
+	trigger:
+		send "&e[Player Stats]%nl%&f%nl%&eHealth: &f%{playerData::%executor%_HEALTH}%&e/&f%{playerData::%executor%_HEALTH_MAX}%%nl%&eRegeneration: &f%ceil({playerData::%executor%_HEALTH_MAX} * ({playerData::%executor%_HEALTH_REGENERATION} / 100))%/sec &e(&f%{playerData::%executor%_HEALTH_REGENERATION}%%%&e)%nl%&eDamage: &f%{playerData::%executor%_DAMAGE}%%nl%&eProtection: &f%{playerData::%executor%_PROTECTION}%%%" to executor
+
+command /reloadInventory [<text>]:
+	trigger:
+		game_playerInventoryHandler_saveInventory(executor)
+		wait 5 ticks
+		game_playerInventoryHandler_loadInventory(executor)
+		send "&aReloaded your inventory!" to executor
+
+command /redeemCode [<text>]:
+	trigger:
+		if arg 1 is not set:
+			send "&cUsage: /redeemCode <code>" to executor
+			stop
+		set {_code} to (arg 1)
+		set {_playerCodeStatus} to game_codeHandler_checkPlayerCode(executor, {_code})
+		if {_playerCodeStatus} is "CODE_ALREADY_REDEEMED":
+			send "&cYou have already redeemed this code!" to executor
+			stop
+		else if {_playerCodeStatus} is "CODE_NOT_EXIST":
+			send "&cInvalid Code!" to executor
+			stop
+		else if {_playerCodeStatus} is "CODE_EXPIRED":
+			send "&cThis code has already expired!" to executor
+			stop
+		game_codeHandler_playerRedeemCode(executor, {_code})
+		send "&aYou have successfully redeemed the code!" to executor
+
+command /getItem [<text>] [<number>]:
+	trigger:	
+		if executor is not a op:
+			send "&cYou are not allowed to use this command!" to executor
+			stop
+		if arg 1 is not set:
+			send "&cUsage: /getItem <ID> [amount]" to executor
+			stop
+		set {_targetItem} to {-game_dataHandler::%arg 1%}
+		if {_targetItem} is not set:
+			send "&cNo item found for this ID!" to executor
+			stop
+		if arg 2 is set:
+			if (arg 2) <= 0:
+				send "&cAmount need to be at least 1!" to executor
+				stop
+			give ((arg 2) of {_targetItem}) to ("%executor%" parsed as player)
+		else:
+			give {_targetItem} to ("%executor%" parsed as player)
+		send "&aAdded item to your inventory!" to executor
+		game_logHandler_sendLog("%executor% spawned in %game_dataHandler_public_getItemDisplay({_targetItem})% with command ""/getItem"".")
+
+command /setBankItem [<offline player>] [<text>] [<number>]:
+	trigger:	
+		if executor is not console:
+			if executor is not a op:
+				send "&cYou are not allowed to use this command!" to executor
+				stop
+		if arg 1 or arg 2 is not set:
+			send "&cUsage: /setBankItem <player> <ID> [amount]" to executor
+			stop
+		set {_targetItem} to {-game_dataHandler::%arg 2%}
+		if {_targetItem} is not set:
+			send "&cNo item found for this ID!" to executor
+			stop
+		set {_amount} to (check [arg 3 is set] ? (arg 3) : 1)
+		if {_amount} < 1:
+			set {playerData::%arg 1%_BANK_ITEMS} to stringDatasAPI_removeData({playerData::%arg 1%_BANK_ITEMS}, (arg 2 in upper case))
+			send "&aRemoved item from %arg 1%'s bank!" to executor
+			game_logHandler_sendLog("%executor% removed item from %arg 1%'s bank with command ""/setBankItem"".")
+		else:
+			set {playerData::%arg 1%_BANK_ITEMS} to stringDatasAPI_setData((arg 2 in upper case), "%{_amount}%", {playerData::%arg 1%_BANK_ITEMS})
+			send "&aAdded item to %arg 1%'s bank!" to executor
+			game_logHandler_sendLog("%executor% added item %game_dataHandler_public_getItemDisplay(({_amount} of {_targetItem}))% to %arg 1%'s bank with command ""/setBankItem"".")
+
+command /setQuest [<offline player>] [<text>] [<number>]:
+	trigger:	
+		if executor is not console:
+			if executor is not a op:
+				send "&cYou are not allowed to use this command!" to executor
+				stop
+		if arg 1 or arg 2 or arg 3 is not set:
+			send "&cUsage: /setQuest <player> <quest> [level]" to executor
+			stop
+		set {_level} to (check [arg 3 is set] ? (arg 3) : 0)
+		if {-game_dataHandler::%arg 2%_%{_level}%_QUEST_DATA} is not set:
+			send "&cInvalid quest name or level!" to executor
+			stop
+		set {playerData::%arg 1%_COMPLETED_QUEST_DATA} to stringDatasAPI_setData((arg 2 in upper case), "%{_level}%", {playerData::%arg 1%_COMPLETED_QUEST_DATA})
+		send "&aSuccessfully set %arg 1%'s quest to level %{_level}%!" to executor
+		game_logHandler_sendLog("%executor% set %arg 1%'s %(arg 2 in upper case)% quest to level %{_level}% with command ""/setQuest"".")
+
+command /serverActivity [<offline player>] [<text>]:
+	trigger:	
+		if executor is not console:
+			send "&cYou are not allowed to use this command!" to executor
+			stop
+		set {_player} to (arg 1)
+		set {_playerUUID} to ({_player}'s UUID)
+		if (arg 2) is "VOTE" or "BOOST":
+			if (arg 2) is "VOTE":
+				send "&b%(arg 1)% has voted for the server!" to all players
+			else:
+				send "&b%(arg 1)% has boosted the server!" to all players
+			set {_type} to (arg 2) in upper case
+			if (arg 1) is online:
+				set {_rewardRaw} to {-game_dataHandler::SERVER_%{_type}%_REWARD}
+				give game_dataHandler_public_textToItems({_rewardRaw}, {_player}) to {_player}
+				stop
+			set {_previousUnclaims} to {gameData::UNCLAIM_%{_type}%S_%{_playerUUID}%}
+			set {_previousUnclaims} to (check [{gameData::UNCLAIM_%{_type}%S_%{_playerUUID}%} is set] ? {_previousUnclaims} : 0)
+			set {gameData::UNCLAIM_%{_type}%S_%{_playerUUID}%} to ({_previousUnclaims} + 1)
+			game_logHandler_sendLog("Unclaim %{_type}% for %{_player}% increase by 1. (TOTAL = %{gameData::UNCLAIM_%{_type}%S_%{_playerUUID}%}%)")
+
+command /wipePlayerData [<offline player>]:
+	trigger:	
+		if executor is not console:
+			if executor is not a op:
+				send "&cYou are not allowed to use this command!" to executor
+				stop
+		if arg 1 is not set:
+			send "&cUsage: /wipePlayerData <player>" to executor
+			stop
+		set {_wipedDataPlayer} to (arg 1)
+		delete {playerData::%{_wipedDataPlayer}%_SAVED_INVENTORY}
+		delete {playerData::%{_wipedDataPlayer}%_BANK_ITEMS}
+		delete {playerData::%{_wipedDataPlayer}%_SAVED_STATS}
+		delete {playerData::%{_wipedDataPlayer}%_COMPLETED_QUEST_DATA}
+		delete {playerData::%{_wipedDataPlayer}%_ACTIVE_QUEST_DATA}
+		delete {-game_questHandler::%{_wipedDataPlayer}%_ACTIVE_QUEST}
+		delete {playerData::%{_wipedDataPlayer}%_CODE_DATA}
+		if {_wipedDataPlayer} is online:
+			clear {_wipedDataPlayer}'s inventory
+			game_equipmentHandler_updatePlayerEquipmentStats({_wipedDataPlayer})
+			game_playerStatsHandler_loadStats({_wipedDataPlayer})
+			game_playerDisplayHandler_sidebar_updatePlayerSidebar({_wipedDataPlayer})
+			give {-game_dataHandler::STONE_PICKAXE_1_ITEM} to {_wipedDataPlayer}
+		send "&aYou have successfully wiped %{_wipedDataPlayer}%'s data!" to executor
+		game_logHandler_sendLog("%executor% wiped %{_wipedDataPlayer}%'s data.")
+
+command /log [<text>]:
+	trigger:
+		if executor is not a op:
+			send "&cYou are not allowed to use this command!" to executor
+			stop
+		if {-game_eventHandler::%executor%_LOG_TOGGLE} is set:
+			delete {-game_eventHandler::%executor%_LOG_TOGGLE}
+			send "&eYou have turned &coff &elogs." to executor
+			stop
+		set {-game_eventHandler::%executor%_LOG_TOGGLE} to now
+		send "&eYou have turned &aon &elogs." to executor
+
+command /music [<text>]:
+	trigger:
+		if {-game_musicHandler::%executor%_MUSIC} is set:
+			delete {-game_musicHandler::%executor%_MUSIC}
+			execute console command "stopsound %{_player}%"
+			send "&eYou have turned &coff &emusic." to executor
+			stop
+		game_musicHandler_playRepeat(executor, now)
+		send "&eYou have turned &aon &emusic." to executor
+
+command /vanish:
+	aliases: /v
+	trigger:
+		if executor doesn't have permission "group.helper":
+			send "&cYou are not allowed to use this command!" to executor
+			stop
+		if {-game_vanishHandler::%executor%_VANISH} is set:
+			game_vanishHandler_player(executor, false)
+			send "&eYou have turned &coff &evanish." to executor
+		else:
+			game_vanishHandler_player(executor, true)
+			send "&eYou have turned &aon &evanish." to executor
+		loop all players:
+			game_vanishHandler_updateVanishedPlayers(loop-player)
+
+command /resetMines [<text>]:
+	trigger:
+		if executor is not a op:
+			send "&cYou are not allowed to use this command!" to executor
+			stop
+		game_mineResetHandler_resetAllAreas()
+		send "&d%executor% has forced all mines to reset!" to all players
+
+command /beez-vote [<text>]:
+	trigger:
+		send "&bVote for us at <url:https://playerservers.com/server/Beez>https://playerservers.com/server/Beez<reset>&b." to executor
+
+every 1 second:
+	set {-game_eventHandler::MINE_RESET_COUNTDOWN} to (check [{-game_eventHandler::MINE_RESET_COUNTDOWN} is set] ? {-game_eventHandler::MINE_RESET_COUNTDOWN} : 121)
+	remove 1 from {-game_eventHandler::MINE_RESET_COUNTDOWN}
+	if {-game_eventHandler::MINE_RESET_COUNTDOWN} <= 0:
+		set {-game_eventHandler::MINE_RESET_COUNTDOWN} to 16
+		loop all players:
+			if game_dataHandler_public_checkInArea((loop-player's location), "ORE_MINES") is true:
+				game_healthbarHandler_teleport(loop-player, {-game_dataHandler::SPAWN_LOCATION})
+		game_mineResetHandler_resetAllAreas()
+		send "&eAll mines have been reset!%nl%&eThe next mine reset is coming in 15 seconds!" to all players
+#	else if {-game_eventHandler::MINE_RESET_COUNTDOWN} is 30 or 20 or 10 or 5:
+#		send "&eAll mines is resetting in %{-game_eventHandler::MINE_RESET_COUNTDOWN}% seconds!" to all players
+	loop all players:
+		game_healthHandler_healthRegeneration(loop-player)
+		game_playerDisplayHandler_playerActionbar(loop-player)
+
+every 1 minute:
+	send "&6All players inventory data have been saved." to all players
+	loop all players:
+		game_playerInventoryHandler_saveInventory(loop-player)
+		game_playerDisplayHandler_playerTablist(loop-player)
+		game_playerDisplayHandler_sidebar_updatePlayerSidebar(loop-player)
+
+every 3 minutes:
+	set {_autoBroadcastRandomID} to (random integer between 1 and {-game_dataHandler::AUTO_BROADCAST_AMOUNT})
+	send "&b[Auto-Broadcast] %{-game_dataHandler::AUTO_BROADCAST_MESSAGE_%{_autoBroadcastRandomID}%}%" to all players
+	set {_airdropButtonChance} to (random integer between 1 and 5)
+	if {_airdropButtonChance} is 1:
+		game_randomEventHandler_airDrop_spawnButtonRandomLocation()
+	set {_mobUUID::*} to {-game_dataHandler::MOB_LIST} split by ":"
+	loop {_mobUUID::*}:
+		set {_loopMobUUID} to {_mobUUID::%loop-index%}
+		game_healthbarHandler_update({-entityData::%{_loopMobUUID}%_ENTITY})
+	loop all players:
+		game_healthbarHandler_update(loop-player)
+
+on block break:
+	set {_playerTool} to player's tool
+	if game_temporaryBlockHandler_isTemporaryBlock(event-block) is true:
+		game_temporaryBlockHandler_breakBlock(player, event-block)
+		stop
+	if player's gamemode is creative:
+		stop
+	if game_randomEventHandler_airDrop_checkValid(event-block's location) is true:
+		game_randomEventHandler_airDrop_playerOpenAirdrop(player, (event-block's location))
+		stop
+	if game_dataHandler_oreBlocks_checkValid(event-block's type) is false:
+		cancel event
+		stop
+	if game_dataHandler_public_checkInArea((event-block's location), "ORE_MINES") is false:
+		cancel event
+		stop
+	if game_itemDataHandler_itemType_getType({_playerTool}) is not "PICKAXE" or "AXE":
+		cancel event
+		stop
+	if game_pickaxeHandler_pickaxe_checkBreakable(event-block's type, {_playerTool}) is false:
+		cancel event
+		send "&cYour tool can't break this ore!" to player
+		stop
+	game_oreHandler_oreBreak(player, event-block)
+
+on block place:
+	if player's gamemode is creative:
+		stop
+	if event-block is not white wool:
+		cancel event
+		stop
+	if game_dataHandler_public_checkInArea((event-block's location), ("SPAWN" and "ORE_MINES")) is true:
+		send "&cYou are not allowed to place blocks inside this area!" to player
+		cancel event
+		stop
+	if event-block's y coords < 95:
+		set {_insideRestrictArea} to true
+	else if event-block's y coords > 110:
+		set {_insideRestrictArea} to true
+	if {_insideRestrictArea} is set:
+		send "&cYou are only allowed to place blocks in range of 95~110 y coords." to player
+		cancel event
+		stop
+	game_temporaryBlockHandler_registerBlock(player, event-block)
+	game_questHandler_recordStat(player, "PLACING_Temporary Block", 1)
+
+on rightclick:
+	set {_clickedSlot} to player's current hotbar slot
+	set {_clickedTool} to player's tool
+	if player's gamemode is creative:
+		stop
+	else if {_clickedTool} is bow:
+		stop
+	set {_clickedToolType} to game_itemDataHandler_itemType_getType({_clickedTool})
+	if {_clickedToolType} is "PICKAXE" or "AXE" or "ARMOR" or "WEAPON":
+		game_shopHandler_itemUpgrade_gui(player, {_clickedTool}, {_clickedSlot})
+	else if clicked block is set:
+		if clicked block is ender chest:
+			game_crateHandler_gui(player)
+		else if "%clicked block's location%" is "%{gameData::AIRDROP_BUTTON_LOCATION}%":
+			set clicked block to air
+			delete {gameData::AIRDROP_BUTTON_LOCATION}
+			game_randomEventHandler_airDrop_startAirdrop(player, "METEOR")
+		else:
+			stop
+	else:
+		stop
+	cancel event
+
+on inventory click:
+	if clicked slot is 40:
+		cancel event
+		stop
+	if inventory name of current inventory of player is "container.crafting":
+		# nothing
+	else if "%clicked inventory%" is not "inventory of %player%":
+		# nothing
+	else:
+		send "&cYou are not allowed to interact with your inventory at this time!" to player
+		cancel event
+	wait 1 tick
+	game_equipmentHandler_updatePlayerEquipmentStats(player)
+
+on drop:
+	if game_itemDataHandler_itemType_getType(event-item) is "PICKAXE" or "AXE":
+		cancel event
+		send "&cYou can't drop your pickaxe!" to player
+		stop
+	if inventory name of current inventory of player is "container.crafting":
+		game_equipmentHandler_updatePlayerEquipmentStats(player)
+		stop
+	cancel event
+
+on pickup:
+	cancel event
+
+on chat:
+	set {_playerMessageSplit::*} to message split by " "
+	loop {_playerMessageSplit::*}:
+		set {_withoutBox} to {_playerMessageSplit::%loop-index%}
+		replace all "[" and "]" with "" in {_withoutBox}
+		set {_commandSplit::*} to {_withoutBox} split by ":"
+		if {_playerMessageSplit::%loop-index%} is not "[%{_withoutBox}%]":
+			# nothing
+		else if {_commandSplit::1} is "TOOL" or "ITEM":
+			if player's tool is not air:
+				if (amount of {_commandSplit::*}) is 1:
+					set {_playerMessageSplit::%loop-index%} to "&c[Tool: %game_dataHandler_public_getItemDisplay(player's tool)%]&f"
+		else if {_commandSplit::1} is "BANK":
+			if (amount of {_commandSplit::*}) is not 2:
+				set {_illegalFormula} to true
+			else if {-game_dataHandler::%{_commandSplit::2}%} is not set:
+				set {_illegalFormula} to true
+			if {_illegalFormula} is not set:
+				set {_itemsInBank} to (stringDatasAPI_getData({playerData::%player%_BANK_ITEMS}, {_commandSplit::2}) parsed as number)
+				set {_itemsInBank} to (check [{_itemsInBank} is set] ? {_itemsInBank} : 0)
+				set {_displayItem} to ({_itemsInBank} of {-game_dataHandler::%{_commandSplit::2}%})
+				set {_playerMessageSplit::%loop-index%} to "&c[Bank: %game_dataHandler_public_getItemDisplay({_displayItem})%]&f"
+		else if {_commandSplit::1} is "STAT":
+			if (amount of {_commandSplit::*}) is not 2:
+				set {_illegalFormula} to true
+			else if {_commandSplit::2} is not "KILLS" or "DEATHS" or "MINED_BLOCKS":
+				set {_illegalFormula} to true
+			if {_illegalFormula} is not set:
+				if {_commandSplit::2} is "KILLS":
+					set {_statDisplay} to "Kills"
+				else if {_commandSplit::2} is "DEATHS":
+					set {_statDisplay} to "Deaths"
+				else if {_commandSplit::2} is "MINED_BLOCKS":
+					set {_statDisplay} to "Mined Blocks"
+				set {_playerMessageSplit::%loop-index%} to "&c[%{_statDisplay}%: %{-game_playerStatsHandler::%player%_%{_commandSplit::2}%}%]&f"
+		delete {_itemsInBank}
+		delete {_illegalFormula}
+	set {_playerMessage} to join {_playerMessageSplit::*} with delimiter " "
+	if player is a op:
+		if {_playerMessage} contains "&":
+			set {_colorcodeCheck::*} to {_playerMessage} split by ""
+			loop (amount of {_colorcodeCheck::*}) times:
+				if {_colorcodeCheck::%loop-number%} is "&":
+					set {_nextCharNum} to (loop-number + 1)
+					# I dont want text style like bold or something, I want color only.
+					if {_colorcodeCheck::%{_nextCharNum}%} is "0" or "1" or "2" or "3" or "4" or "5" or "6" or "7" or "8" or "9" or "a" or "b" or "c" or "d" or "e" or "f":
+						set {_colorcodeCheck::%loop-number%} to "§"
+			set {_playerMessage} to join {_colorcodeCheck::*} with delimiter ""
+	set chat format to "%player's prefix%%player% &f%{_playerMessage}%"
+
+on script load:
+	delete {-game_eventHandler::LOADED}
+	wipe server crafting recipes
+	wait 2 seconds
+	kill all dropped items
+	wait 4 seconds
+	set {-game_eventHandler::LOADED} to true
+
+on script unload:
+	loop all players:
+		game_questHandler_saveData(loop-player)
+		game_playerInventoryHandler_saveInventory(loop-player)
+		game_playerStatsHandler_saveStats(loop-player)
+
+on join:
+	set join message to "&2&lJOIN! &a%player%"
+	wait 5 ticks
+	game_playerInventoryHandler_loadInventory(player)
+	game_playerStatsHandler_loadStats(player)
+	game_questHandler_loadData(player)
+	game_playerDisplayHandler_playerTablist(player)
+	game_playerDisplayHandler_sidebar_newPlayerSidebar(player)
+	game_playerDisplayHandler_sidebar_updatePlayerSidebar(player)
+	game_healthbarHandler_new(player)
+	game_healthbarHandler_update(player)
+	if {playerData::%player%_SAVED_INVENTORY} is not set:
+		give player {-game_dataHandler::STONE_PICKAXE_1_ITEM}
+	game_invisiblePressurePlateHandler_hideAllFromPlayer(player)
+	if {playerData::%player%_PERSONAL_BOOSTER_TYPE} is set:
+		game_boosterHandler_countdown(player, {playerData::%player%_PERSONAL_BOOSTER_ID})
+	game_healthbarHandler_teleport(player, {-game_dataHandler::SPAWN_LOCATION})
+	set {_playerUUID} to (player's UUID)
+	set {_checkUnclaimTypes::*} to "VOTE" and "BOOST"
+	loop {_checkUnclaimTypes::*}:
+		set {_loopType} to {_checkUnclaimTypes::%loop-index%}
+		if {gameData::UNCLAIM_%{_loopType}%S_%{_playerUUID}%} is set:
+			set {_announeUnclaim} to true
+			set {_unclaim%{_loopType}%s} to {gameData::UNCLAIM_%{_loopType}%S_%{_playerUUID}%}
+			loop {_unclaim%{_loopType}%s} times:
+				set {_rewardRaw} to {-game_dataHandler::SERVER_%{_loopType}%_REWARD}
+				give game_dataHandler_public_textToItems({_rewardRaw}, player) to player
+			delete {gameData::UNCLAIM_%{_loopType}%S_%{_playerUUID}%}
+		else:
+			set {_unclaim%{_loopType}%s} to 0
+	if {_announeUnclaim} is true:
+		send "&bYou have received your reward for %{_unclaimVOTEs}% votes and %{_unclaimBOOSTs}% boosts!" to player
+	game_vanishHandler_updateVanishedPlayers(player)
+	while (true):
+		if {-game_eventHandler::LOADED} is set:
+			exit 1 loop
+		wait 1 second
+	game_musicHandler_playRepeat(player, now)
+	if player is a op:
+		wait 2 seconds
+		set {-game_eventHandler::%player%_LOG_TOGGLE} to now
+		send "&f%nl%&cYour log have been automatically turned on as you are opped.%nl%&cUse command ""/log"" to toggle your log.%nl%&f" to player
+
+on quit:
+	set quit message to "&4&lQUIT! &c%player%"
+	delete {-game_playerDisplayHandler::%player%_SIDEBAR_LOADED}
+	game_playerInventoryHandler_saveInventory(player)
+	game_playerStatsHandler_saveStats(player)
+	game_questHandler_saveData(player)
+	game_healthbarHandler_remove(player)
+
+on item spawn:
+	cancel event
+
+on craft:
+	cancel event
+
+on hunger meter change:
+	cancel event
+
+on shoot:
+	set {_arrowUUID} to (projectile's UUID)
+	set {_arrowType} to game_bowHandler_arrowRaritySelector(shooter)
+	set {_arrowItem} to {-game_dataHandler::%{_arrowType}%}
+	set {_arrowData::*} to game_itemDataHandler_itemData_getDatas({_arrowItem}, "RANGED DAMAGE")
+	set {_arrowData::1} to (check [{_arrowData::1} is set] ? ({_arrowData::1} parsed as number) : 0)
+	set {-game_eventHandler::PROJECTILE_%{_arrowUUID}%} to ({playerData::%shooter%_RANGED_DAMAGE} + {_arrowData::1})
+	if game_eventHandler_checkArrowReturn(shooter) is false:
+		remove (1 of {_arrowItem}) from shooter's inventory
+	game_questHandler_recordStat(shooter, "SHOOTING_%{_arrowType}%", 1)
+
+on damage:
+	set damage to 0
+	if attacker and victim is a player:
+		if game_dataHandler_public_checkInArea((attacker's location), "SPAWN") or game_dataHandler_public_checkInArea((victim's location), "SPAWN") is true:
+			cancel event
+			stop
+	if attacker is a player:
+		if victim is not a player:
+			set {_victimUUID} to (victim's UUID)
+			if (amount of {-game_mobHandler::%{_victimUUID}%_TARGETS::*}) <= 0:
+				set {_triggerTargetFunction} to true
+			if {-game_mobHandler::%{_victimUUID}%_TARGETS::%attacker%} is not set:
+				set {-game_mobHandler::%{_victimUUID}%_TARGETS::%attacker%} to attacker
+				set {-game_mobHandler::%{_victimUUID}%_DAMAGE_TAKEN::%attacker%} to (check [{-game_mobHandler::%{_victimUUID}%_DAMAGE_TAKEN::%attacker%} is set] ? {-game_mobHandler::%{_victimUUID}%_DAMAGE_TAKEN::%attacker%} : 0)
+			if {_triggerTargetFunction} is set:
+				game_mobHandler_target(victim, {-entityData::%{_victimUUID}%_DEATH_COUNT})
+	set {_damageCause} to "%damage cause%"
+	if {_damageCause} is "projectile":
+		set {_projectileUUID} to (projectile's UUID)
+		if {-game_eventHandler::PROJECTILE_%{_projectileUUID}%} is set:
+			game_healthHandler_damage(attacker, victim, {-game_eventHandler::PROJECTILE_%{_projectileUUID}%}, "RANGED_DAMAGE")
+			delete {-game_eventHandler::PROJECTILE_%{_projectileUUID}%}
+	else if {_damageCause} is "attack":
+		game_healthHandler_damage(attacker, victim, {playerData::%attacker%_MELEE_DAMAGE}, "MELEE_DAMAGE")
+	else if {_damageCause} is "void":
+		game_healthHandler_death({_null}, victim)
+		stop
+	set damage delay of victim to 1 tick
+
+on swap hand item:
+	cancel event
+
+on tool change:
+	wait 1 tick
+	game_equipmentHandler_updatePlayerEquipmentStats(player)
+
+on heal:
+	cancel event
+
+on projectile hit:
+	kill event-projectile
+
+on xp spawn:
+	cancel event
+
+on step on pressure plate:
+	game_invisiblePressurePlateHandler_runAction(player, (event-block's location))
+
+function game_eventHandler_checkArrowReturn(player: player) :: boolean:
+	set {_arrowReturnChance} to {playerData::%{_player}%_ARROW_RETURN}
+	set {_random} to (random number between 0 and 100)
+	if {_arrowReturnChance} >= {_random}:
+		return true
+	return false

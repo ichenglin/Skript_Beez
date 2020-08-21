@@ -1,0 +1,1580 @@
+on script unload:
+	loop all players:
+		game_playerInventoryHandler_saveInventory(loop-player)
+	game_mobHandler_killAll()
+
+on script load:
+	wait 1 tick
+	kill all animals
+	kill all monsters
+	kill all area effect clouds
+	wait 1 tick
+	game_dataHandler_update()
+	wait 1 tick
+	loop all players:
+		game_playerInventoryHandler_loadInventory(loop-player)
+		game_healthbarHandler_new(loop-player)
+		game_healthbarHandler_update(loop-player)
+
+function game_dataHandler_update():
+
+	delete {-game_dataHandler::*}
+
+	set {-game_dataHandler::SPAWN_LOCATION} to (location at (0.5, 100, 0.5) in world("minepvp"))
+	set {-game_dataHandler::SPAWN_LOCATION}'s yaw to -90.1
+	set {-game_dataHandler::SPAWN_LOCATION}'s pitch to 0.1
+
+	set {-game_dataHandler::COCAINE_ROOM_LOCATION} to (location at (118.5, 63, 108.5) in world("minepvp"))
+	set {-game_dataHandler::COCAINE_ROOM_LOCATION}'s yaw to 179.9
+	set {-game_dataHandler::COCAINE_ROOM_LOCATION}'s pitch to 0.1
+
+	set {-game_dataHandler::COCAINE_ROOM_EXIT_LOCATION} to (location at (41.5, 114, 18.5) in world("minepvp"))
+	set {-game_dataHandler::COCAINE_ROOM_EXIT_LOCATION}'s yaw to 135
+	set {-game_dataHandler::COCAINE_ROOM_EXIT_LOCATION}'s pitch to 0.1
+
+	game_dataHandler_area_register("SPAWN", (location at (0.5, 99.5, 4.5) in world("minepvp")), (location at (-2.5, 110.5, -3.5) in world("minepvp")))
+
+	game_dataHandler_invisiblePressurePlate_register((location at (45.5, 72.5, 19.5) in world("minepvp")), "TELEPORT_COCAINE_ROOM")
+	game_dataHandler_invisiblePressurePlate_register((location at (44.5, 72.5, 19.5) in world("minepvp")), "TELEPORT_COCAINE_ROOM")
+	game_dataHandler_invisiblePressurePlate_register((location at (43.5, 72.5, 19.5) in world("minepvp")), "TELEPORT_COCAINE_ROOM")
+	game_dataHandler_invisiblePressurePlate_register((location at (45.5, 72.5, 20.5) in world("minepvp")), "TELEPORT_COCAINE_ROOM")
+	game_dataHandler_invisiblePressurePlate_register((location at (44.5, 72.5, 20.5) in world("minepvp")), "TELEPORT_COCAINE_ROOM")
+	game_dataHandler_invisiblePressurePlate_register((location at (43.5, 72.5, 20.5) in world("minepvp")), "TELEPORT_COCAINE_ROOM")
+	game_dataHandler_invisiblePressurePlate_register((location at (45.5, 72.5, 21.5) in world("minepvp")), "TELEPORT_COCAINE_ROOM")
+	game_dataHandler_invisiblePressurePlate_register((location at (44.5, 72.5, 21.5) in world("minepvp")), "TELEPORT_COCAINE_ROOM")
+	game_dataHandler_invisiblePressurePlate_register((location at (43.5, 72.5, 21.5) in world("minepvp")), "TELEPORT_COCAINE_ROOM")
+
+	game_dataHandler_invisiblePressurePlate_register((location at (113.5, 63.5, 103.5) in world("minepvp")), "TELEPORT_COCAINE_ROOM_EXIT")
+
+	game_dataHandler_autoBroadcast_registerAmount(9)
+	game_dataHandler_autoBroadcast_registerMessage(1, "You can store items in your bank to keep your loots safe or to use them in shop.")
+	game_dataHandler_autoBroadcast_registerMessage(2, "Don't want to hear the music? Turn your music off with /music.")
+	game_dataHandler_autoBroadcast_registerMessage(3, "You can dispose your items by dropping them.")
+	game_dataHandler_autoBroadcast_registerMessage(4, "Redeem your code with /redeemCode for rewards.")
+	game_dataHandler_autoBroadcast_registerMessage(5, "You can only have one active quest at a time, cancel your current quest with /cancelQuest if you want to switch your quest.")
+	game_dataHandler_autoBroadcast_registerMessage(6, "We highly recommend using 1.12.* versions for best game experience!")
+	game_dataHandler_autoBroadcast_registerMessage(7, "Join our discord <url:https://discord.gg/ZEzprzN>https://discord.gg/ZEzprzN<reset> &bfor updates and codes.")
+	game_dataHandler_autoBroadcast_registerMessage(8, "Join our discord <url:https://discord.gg/ZEzprzN>https://discord.gg/ZEzprzN<reset> &bfor updates and codes.")
+	game_dataHandler_autoBroadcast_registerMessage(9, "Vote for us with /beez-vote for rewards!")
+
+	set {-game_dataHandler::SERVER_VOTE_REWARD} to "TICKET_ITEM:1,BOOSTER:Ore:2:30"
+	set {-game_dataHandler::SERVER_BOOST_REWARD} to "TICKET_ITEM:20,CHARGED_ARROW_ITEM:16,NOOB_MASK_ITEM:1:5,BOOSTER:Ore:3:300"
+
+	game_dataHandler_code_registerCode("Release", "STONE_ITEM:30,TICKET_ITEM:5", "ACTIVE")
+	game_dataHandler_code_registerCode("Stone", "STONE_ITEM:20", "ACTIVE")
+	game_dataHandler_code_registerCode("BuzzyBoost", "BOOSTER:Ore:2:180", "ACTIVE")
+	game_dataHandler_code_registerCode("BowSpamFTW", "ROYAL_ARROW_ITEM:4", "ACTIVE")
+
+	# MINING:STONE:2 KILLING:Player:3 RANGED_KILLING:Chicken:3 BUYING:TEMPORARY_BLOCK_ITEM:64 PLACING:Temporary Block:4 SHOOTING:SPIKED_ARROW_ITEM:5 COLLECTING:LITTER_ITEM:3
+
+	game_dataHandler_quest_register("EXAMPLE", 1, "Example", "COLLECTING:LITTER_ITEM:3", "COCAINE_ITEM:1")
+	game_dataHandler_quest_register("EXAMPLE", 2, "Example", "MINING:STONE:2,MINING:IRON_BLOCK:2", "COCAINE_ITEM:1")
+	game_dataHandler_quest_register("EXAMPLE", 3, "Example", "MINING:STONE:4,KILLING:PLAYER:2", "COCAINE_ITEM:3")
+	game_dataHandler_quest_register("EXAMPLE", 4, "Example", "MINING:STONE:6,FINDING:FORGOTTEN_GOLD_ITEM:1", "COCAINE_ITEM:5")
+	game_dataHandler_quest_register("EXAMPLE", 5, "Example", "BUYING:TEMPORARY_BLOCK_ITEM:64", "COCAINE_ITEM:7")
+
+	game_dataHandler_quest_register("COBBLEMAN", 1, "Cobble Man: The Beginning", "MINING:STONE:5", "TICKET_ITEM:1")
+	game_dataHandler_quest_register("COBBLEMAN", 2, "Cobble Man: Shop Purchasing", "BUYING:STONE_SWORD_1_ITEM:1", "TICKET_ITEM:1")
+	game_dataHandler_quest_register("COBBLEMAN", 3, "Cobble Man: Animal Hunting", "KILLING:Chicken:2", "TICKET_ITEM:1")
+	game_dataHandler_quest_register("COBBLEMAN", 4, "Cobble Man: Self Defense", "KILLING:Player:1", "TICKET_ITEM:1")
+	game_dataHandler_quest_register("COBBLEMAN", 5, "Cobble Man: Essential Material", "MINING:STONE:50", "AXE_1_ITEM:1")
+
+	game_dataHandler_quest_register("GOLD_MINER", 1, "Gold Miner: Stone Start", "MINING:STONE:100", "STONE_ITEM:20")
+	game_dataHandler_quest_register("GOLD_MINER", 2, "Gold Miner: Get On Track", "MINING:STONE:250", "STONE_ITEM:60")
+	game_dataHandler_quest_register("GOLD_MINER", 3, "Gold Miner: Inspect The Hardness", "MINING:STONE:500", "STONE_ITEM:90")
+	game_dataHandler_quest_register("GOLD_MINER", 4, "Gold Miner: More, More!", "MINING:STONE:900", "STONE_ITEM:130")
+	game_dataHandler_quest_register("GOLD_MINER", 5, "Gold Miner: Hard Working Miner", "MINING:STONE:1500", "STONE_ITEM:170")
+	game_dataHandler_quest_register("GOLD_MINER", 6, "Gold Miner: Miner's Contract", "MINING:STONE:2500", "TICKET_ITEM:5")
+
+	game_dataHandler_quest_register("GOLD_MINER", 7, "Gold Miner: Coal Of Duty", "MINING:COAL_ORE:125", "COAL_ITEM:15")
+	game_dataHandler_quest_register("GOLD_MINER", 8, "Gold Miner: Un-Cool Coal", "MINING:COAL_ORE:300", "COAL_ITEM:20")
+	game_dataHandler_quest_register("GOLD_MINER", 9, "Gold Miner: Coal Digger", "MINING:COAL_ORE:550", "COAL_ITEM:35")
+	game_dataHandler_quest_register("GOLD_MINER", 10, "Gold Miner: Experienced Miner", "MINING:COAL_ORE:1100", "COAL_ITEM:65")
+	game_dataHandler_quest_register("GOLD_MINER", 11, "Gold Miner: BBQ Essential", "MINING:COAL_ORE:1850", "COAL_ITEM:120")
+	game_dataHandler_quest_register("GOLD_MINER", 12, "Gold Miner: Coal VS Stone", "MINING:STONE:1200,MINING:COAL_ORE:2650", "TICKET_ITEM:8")
+
+	game_dataHandler_quest_register("GOLD_MINER", 13, "Gold Miner: Into The Iron", "MINING:IRON_ORE:150", "IRON_ITEM:15")
+	game_dataHandler_quest_register("GOLD_MINER", 14, "Gold Miner: Valuable Material", "MINING:IRON_ORE:350", "IRON_ITEM:40")
+	game_dataHandler_quest_register("GOLD_MINER", 15, "Gold Miner: Iron Man", "MINING:IRON_ORE:700", "IRON_ITEM:75")
+	game_dataHandler_quest_register("GOLD_MINER", 16, "Gold Miner: Pure White Takeover", "MINING:IRON_ORE:1400", "IRON_ITEM:125")
+	game_dataHandler_quest_register("GOLD_MINER", 17, "Gold Miner: Ceo Of Efficiency", "MINING:IRON_ORE:2100", "IRON_ITEM:170")
+	game_dataHandler_quest_register("GOLD_MINER", 18, "Gold Miner: Evolution Of Materials", "MINING:STONE:1500,MINING:COAL_ORE:1500,MINING:IRON_ORE:2800", "TICKET_ITEM:10")
+	
+	game_dataHandler_quest_register("GOLD_MINER", 19, "Gold Miner: New Discovery", "MINING:GOLD_ORE:250", "GOLD_ITEM:20")
+	game_dataHandler_quest_register("GOLD_MINER", 20, "Gold Miner: Shiny Stuff", "MINING:GOLD_ORE:640", "GOLD_ITEM:45")
+	game_dataHandler_quest_register("GOLD_MINER", 21, "Gold Miner: Advanced Miner", "MINING:GOLD_ORE:1700", "GOLD_ITEM:110")
+	game_dataHandler_quest_register("GOLD_MINER", 22, "Gold Miner: Golden Award", "MINING:GOLD_ORE:3100", "GOLD_ITEM:190")
+	game_dataHandler_quest_register("GOLD_MINER", 23, "Gold Miner: Keep On Going", "MINING:GOLD_ORE:5400", "GOLD_ITEM:350")
+	game_dataHandler_quest_register("GOLD_MINER", 24, "Gold Miner: Golden Tools Are Lies", "MINING:COAL_ORE:2000,MINING:IRON_ORE:2000,MINING:GOLD_ORE:8100", "TICKET_ITEM:15")
+	
+	game_dataHandler_quest_register("GOLD_MINER", 25, "Gold Miner: Experience Certificate", "MINING:DIAMOND_ORE:450", "DIAMOND_ITEM:15")
+	game_dataHandler_quest_register("GOLD_MINER", 26, "Gold Miner: Die Mond", "MINING:DIAMOND_ORE:900", "DIAMOND_ITEM:25")
+	game_dataHandler_quest_register("GOLD_MINER", 27, "Gold Miner: Diamond Award", "MINING:DIAMOND_ORE:2000", "DIAMOND_ITEM:60")
+	game_dataHandler_quest_register("GOLD_MINER", 28, "Gold Miner: Jewelry Accessories", "MINING:DIAMOND_ORE:4300", "DIAMOND_ITEM:110")
+	game_dataHandler_quest_register("GOLD_MINER", 29, "Gold Miner: Miner's Contract 2", "MINING:DIAMOND_ORE:9000", "DIAMOND_ITEM:200")
+	game_dataHandler_quest_register("GOLD_MINER", 30, "Gold Miner: Testing Team Work", "MINING:IRON_ORE:3000,MINING:GOLD_ORE:3000,MINING:DIAMOND_ORE:15600", "TICKET_ITEM:20")
+
+	# TYPE NAME DAMAGE REACH HEALTH PROTECTION SPEED LOOT LOCATION
+	set {_chickenReward} to "LITTER_ITEM:1~2:10,SEED_ITEM:1~2:70,FEATHER_ITEM:1:3,TICKET_ITEM:1:0.6,CHICKEN_MASK_ITEM:1:1"
+	game_dataHandler_mob_registerMob("CHICKEN", "Chicken", 5, 2, 10, 0, 1.1, {_chickenReward}, (location at (19.5, 100, 30.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("CHICKEN", "Chicken", 5, 2, 10, 0, 1.1, {_chickenReward}, (location at (-0.5, 100, 26.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("CHICKEN", "Chicken", 5, 2, 10, 0, 1.1, {_chickenReward}, (location at (11.5, 100, 19.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("CHICKEN", "Chicken", 5, 2, 10, 0, 1.1, {_chickenReward}, (location at (3.5, 100, -9.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("CHICKEN", "Chicken", 5, 2, 10, 0, 1.1, {_chickenReward}, (location at (21.5, 100, 11.5) in world("minepvp")))
+
+	set {_cowReward} to "LITTER_ITEM:1~2:9,WHEAT_ITEM:1~2:65,TICKET_ITEM:1:0.7,POOP_ITEM:1:0.55,COW_MASK_ITEM:1:0.9"
+	game_dataHandler_mob_registerMob("COW", "Cow", 7, 2, 35, 0, 1.5, {_cowReward}, (location at (2.5, 100, 11.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("COW", "Cow", 7, 2, 35, 0, 1.5, {_cowReward}, (location at (17.5, 100, 23.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("COW", "Cow", 7, 2, 35, 0, 1.5, {_cowReward}, (location at (14.5, 100, -4.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("COW", "Cow", 7, 2, 35, 0, 1.5, {_cowReward}, (location at (13.5, 100, -14.5) in world("minepvp")))
+
+	set {_sheepReward} to "LITTER_ITEM:1~3:9,WOOL_ITEM:1~2:55,TICKET_ITEM:1:0.9,SHEEP_MASK_ITEM:1:0.9"
+	game_dataHandler_mob_registerMob("SHEEP", "Sheep", 20, 2.5, 250, 25, 1.5, {_sheepReward}, (location at (26.5, 102, 24.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("SHEEP", "Sheep", 20, 2.5, 250, 25, 1.5, {_sheepReward}, (location at (33.5, 102, 18.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("SHEEP", "Sheep", 20, 2.5, 250, 25, 1.5, {_sheepReward}, (location at (28.5, 102, 3.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("SHEEP", "Sheep", 20, 2.5, 250, 25, 1.5, {_sheepReward}, (location at (39.5, 102, -9.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("SHEEP", "Sheep", 20, 2.5, 250, 25, 1.5, {_sheepReward}, (location at (26.5, 102, -17.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("SHEEP", "Sheep", 20, 2.5, 250, 25, 1.5, {_sheepReward}, (location at (10.5, 102, -31.5) in world("minepvp")))
+
+	set {_wolfReward} to "LITTER_ITEM:1~3:8,LEATHER_ITEM:1~2, TICKET_ITEM:1:1,WOLF_MASK_ITEM:1:0.8"
+	game_dataHandler_mob_registerMob("WOLF", "Wolf", 25, 2.5, 490, 40, 1.5, {_wolfReward}, (location at (26.5, 102, 12.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("WOLF", "Wolf", 25, 2.5, 490, 40, 1.5, {_wolfReward}, (location at (36.5, 102, 3.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("WOLF", "Wolf", 25, 2.5, 490, 40, 1.5, {_wolfReward}, (location at (34.5, 102, -9.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("WOLF", "Wolf", 25, 2.5, 490, 40, 1.5, {_wolfReward}, (location at (18.5, 102, -20.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("WOLF", "Wolf", 25, 2.5, 490, 40, 1.5, {_wolfReward}, (location at (27.5, 102, -35.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("WOLF", "Wolf", 25, 2.5, 490, 40, 1.5, {_wolfReward}, (location at (-0.5, 102, -24.5) in world("minepvp")))
+
+	set {_rabbitReward} to "LITTER_ITEM:1~4:8,CARROT_ITEM:1~2,TICKET_ITEM:1:1,RABBIT_MASK_ITEM:1:0.7"
+	game_dataHandler_mob_registerMob("RABBIT", "Rabbit", 45, 3, 730, 45, 2, {_rabbitReward}, (location at (43.5, 104, -5.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("RABBIT", "Rabbit", 45, 3, 730, 45, 2, {_rabbitReward}, (location at (53.5, 104, -18.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("RABBIT", "Rabbit", 45, 3, 730, 45, 2, {_rabbitReward}, (location at (60.5, 104, -29.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("RABBIT", "Rabbit", 45, 3, 730, 45, 2, {_rabbitReward}, (location at (43.5, 104, -34.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("RABBIT", "Rabbit", 45, 3, 730, 45, 2, {_rabbitReward}, (location at (31.5, 104, -44.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("RABBIT", "Rabbit", 45, 3, 730, 45, 2, {_rabbitReward}, (location at (18.5, 104, -39.5) in world("minepvp")))
+
+	set {_donkeyReward} to "LITTER_ITEM:1~5:7,GRASS_ITEM:1~2,TICKET_ITEM:1:1.1,DONKEY_MASK_ITEM:1:0.6"
+	game_dataHandler_mob_registerMob("DONKEY", "Donkey", 60, 3, 1080, 60, 2, {_donkeyReward}, (location at (44.5, 104, 3.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("DONKEY", "Donkey", 60, 3, 1080, 60, 2, {_donkeyReward}, (location at (43.5, 104, -17.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("DONKEY", "Donkey", 60, 3, 1080, 60, 2, {_donkeyReward}, (location at (55.5, 104, -12.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("DONKEY", "Donkey", 60, 3, 1080, 60, 2, {_donkeyReward}, (location at (53.5, 104, -35.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("DONKEY", "Donkey", 60, 3, 1080, 60, 2, {_donkeyReward}, (location at (33.5, 104, -40.5) in world("minepvp")))
+
+	game_dataHandler_mob_registerMob("SPIDER", "Spider (Boss)", 20, 3, 1200, 60, 1.4, "STRING_ITEM:1~4:5,TICKET_ITEM:1~4,SPIDER_MASK_ITEM:1:0.9", (location at (48.5, 104, -53.5) in world("minepvp")))
+	game_dataHandler_mob_registerMob("POLAR BEAR", "Polar Bear (Boss)", 30, 3, 3500, 85, 2, "TICKET_ITEM:1~8,POLAR_BEAR_MASK_ITEM:1:0.7", (location at (35.5, 103, -31.5) in world("minepvp")))
+
+	game_dataHandler_mob_registerMob("PIG", "CombatMC's Test Bot", 0, 0, 100000000, 0, 0, "", (location at (-96.5, 102, -1.5) in world("minepvp")))
+
+	game_dataHandler_airDrop_registerLocationAmount(20)
+	game_dataHandler_airDrop_registerLocation(1, (location at (0.5, 100.5, -13.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(2, (location at (19.5, 100.5, 9.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(3, (location at (12.5, 100.5, 16.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(4, (location at (-0.5, 100.5, 20.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(5, (location at (8.5, 102.5, -17.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(6, (location at (2.5, 102.5, -29.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(7, (location at (13.5, 102.5, -30.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(8, (location at (28.5, 102.5, -31.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(9, (location at (36.5, 102.5, -13.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(10, (location at (22.5, 102.5, -18.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(11, (location at (27.5, 102.5, -0.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(12, (location at (25.5, 102.5, 18.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(13, (location at (29.5, 102.5, 27.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(14, (location at (15.5, 104.5, -39.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(15, (location at (30.5, 104.5, -39.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(16, (location at (46.5, 104.5, -32.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(17, (location at (59.5, 104.5, -20.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(18, (location at (50.5, 104.5, -14.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(19, (location at (43.5, 104.5, 6.5) in world("minepvp")))
+	game_dataHandler_airDrop_registerLocation(20, (location at (52.5, 104.5, 0.5) in world("minepvp")))
+
+	game_dataHandler_airDrop_registerLoot("LITTER_ITEM:1~10,TICKET_ITEM:1:3,SEED_ITEM:1~3:30,FEATHER_ITEM:1~3:10,WHEAT_ITEM:1~2:8")
+
+#	game_dataHandler_chanceReward_registerItem("COMMON_CRATE", 1, 50, "LITTER_ITEM")
+#	game_dataHandler_chanceReward_registerItem("COMMON_CRATE", 2, 30, "STONE_ITEM")
+#	game_dataHandler_chanceReward_registerItem("COMMON_CRATE", 3, 19, "TEMPORARY_BLOCK_ITEM")
+#	game_dataHandler_chanceReward_registerItem("COMMON_CRATE", 4, 1, "COCAINE_ITEM")
+
+	game_dataHandler_items_register("FORGOTTEN_GOLD", (GOLD_NUGGET named "&aGold Miner's Forgotten Gold" with lore "&7&oMaterial"))
+
+	game_dataHandler_items_register("LITTER", (BONE_MEAL named "&aLitter" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("WOOD", (BRICK_ITEM named "&aWood" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("STONE", (CLAY_BALL named "&aStone" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("COAL", (COAL_ITEM named "&aCoal" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("IRON", (IRON_INGOT named "&aIron" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("GOLD", (GOLD_INGOT named "&aGold" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("DIAMOND", (DIAMOND named "&aDiamond" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("EMERALD", (EMERALD named "&aEmerald" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("REDSTONE", (REDSTONE_DUST named "&aRedstone" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("CHEESE", (ORANGE_DYE named "&aCheese" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("COCAINE", (SUGAR named "&aCocaine" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("TICKET", (PAPER named "&aTicket" with lore "&7&oMaterial"))
+
+	game_dataHandler_items_register("SEED", (WHEAT_SEEDS named "&aSeed" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("WHEAT", (WHEAT named "&aWheat" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("WOOL", (DYE:7 named "&aWool" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("LEATHER", (LEATHER named "&aLeather" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("CARROT", (CARROT named "&aCarrot" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("GRASS", (DYE:2 named "&aGrass" with lore "&7&oMaterial"))
+
+	game_dataHandler_items_register("POOP", (DYE:3 named "&aPoopie" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("FEATHER", (FEATHER named "&aFeather" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("STRING", (STRING named "&aString" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("MAGMA", (DYE:14 named "&aMagma" with lore "&7&oMaterial"))
+	game_dataHandler_items_register("EGG", (SPAWN_EGG named "&aEgg" with lore "&7&oMaterial"))
+
+	game_dataHandler_items_register("UNKNOWN", (BARRIER named "&a???" with lore "&7&oMaterial"))
+
+	game_dataHandler_items_register("TEMPORARY_BLOCK", (WHITE_WOOL named "&aTemporary Block" with lore "&7&oBlock"))
+	game_dataHandler_items_register("WARP_PEARL", (ENDER_PEARL named "&aWarp Pearl" with lore "&7&oItem"))
+	game_dataHandler_items_register("ARROW", (ARROW named "&aArrow" with lore "&7&oItem||&f||&eRanged Damage: &f+0"))
+	game_dataHandler_items_register("ROYAL_ARROW", (ARROW named "&aRoyal Arrow" with lore "&7&oItem||&f||&eRanged Damage: &f+15"))
+	game_dataHandler_items_register("SPIKED_ARROW", (ARROW named "&aSpiked Arrow" with lore "&7&oItem||&f||&eRanged Damage: &f+50"))
+	game_dataHandler_items_register("CHARGED_ARROW", (ARROW named "&aCharged Arrow" with lore "&7&oItem||&f||&eRanged Damage: &f+150"))
+
+	set {-game_dataHandler::ALL_ORES} to "BIRCH_PLANK:STONE:COAL_ORE:IRON_ORE:GOLD_ORE:DIAMOND_ORE:EMERALD_ORE:ACTIVE_REDSTONE_ORE"
+	game_dataHandler_oreBlocks_register(BIRCH_PLANK, "WOOD", 1)
+	game_dataHandler_oreBlocks_register(STONE, "STONE", 1)
+	game_dataHandler_oreBlocks_register(COAL_ORE, "COAL", 1)
+	game_dataHandler_oreBlocks_register(IRON_ORE, "IRON", 1)
+	game_dataHandler_oreBlocks_register(GOLD_ORE, "GOLD", 1)
+	game_dataHandler_oreBlocks_register(DIAMOND_ORE, "DIAMOND", 1)
+	game_dataHandler_oreBlocks_register(EMERALD_ORE, "EMERALD", 1)
+	game_dataHandler_oreBlocks_register(ACTIVE_REDSTONE_ORE, "REDSTONE", 1)
+
+	game_dataHandler_oreArea_register(BIRCH_PLANK, (location at (14.5, 105.5, 24.5) in world("minePvP")), (location at (10.5, 101.5, 28.5) in world("minePvP")))
+	game_dataHandler_oreArea_register(STONE, (location at (18.5, 107.5, 14.5) in world("minePvP")), (location at (12.5, 101.5, 8.5) in world("minePvP")))
+	game_dataHandler_oreArea_register(COAL_ORE, (location at (21.5, 107.5, -13.5) in world("minePvP")), (location at (15.5, 101.5, -7.5) in world("minePvP")))
+	game_dataHandler_oreArea_register(IRON_ORE, (location at (37.5, 107.5, 9.5) in world("minePvP")), (location at (33.5, 103.5, 13.5) in world("minePvP")))
+	game_dataHandler_oreArea_register(GOLD_ORE, (location at (8.5, 107.5, -26.5) in world("minePvP")), (location at (4.5, 103.5, -22.5) in world("minePvP")))
+	game_dataHandler_oreArea_register(DIAMOND_ORE, (location at (35.5, 107.5, -23.5) in world("minePvP")), (location at (31.5, 103.5, -19.5) in world("minePvP")))
+	game_dataHandler_oreArea_register(EMERALD_ORE, (location at (53.5, 109.5, -8.5) in world("minePvP")), (location at (49.5, 105.5, -4.5) in world("minePvP")))
+	game_dataHandler_oreArea_register(ACTIVE_REDSTONE_ORE, (location at (57.5, 109.5, -29.5) in world("minePvP")), (location at (53.5, 105.5, -25.5) in world("minePvP")))
+
+# STONE PICKAXES
+# STONE PICKAXES
+# STONE PICKAXES
+
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 1, "&aStone Pickaxe [1]", "Stone", 0, "&eLuck: &f1")
+	# This pickaxe is starter pickaxe, so no upgrade cost data is needed.
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 2, "&aStone Pickaxe [2]", "Stone", 1, "&eLuck: &f3")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 2, "STONE", 5)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 3, "&aStone Pickaxe [3]", "Stone", 1, "&eLuck: &f5")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 3, "STONE", 10)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 4, "&aStone Pickaxe [4]", "Stone", 2, "&eLuck: &f7")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 4, "STONE", 20)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 5, "&aStone Pickaxe [5]", "Stone", 2, "&eLuck: &f9")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 5, "STONE", 40)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 6, "&aStone Pickaxe [6]", "Stone", 3, "&eLuck: &f11")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 6, "STONE", 60)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 7, "&aStone Pickaxe [7]", "Stone", 3, "&eLuck: &f13")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 7, "STONE", 80)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 8, "&aStone Pickaxe [8]", "Stone", 4, "&eLuck: &f15")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 8, "STONE", 120)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 9, "&aStone Pickaxe [9]", "Stone", 4, "&eLuck: &f17")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 9, "STONE", 160)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 10, "&aStone Pickaxe [10]", "Stone", 5, "&eLuck: &f19")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 10, "STONE", 210)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 11, "&aStone Pickaxe [11]", "Stone", 5, "&eLuck: &f21")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 11, "STONE", 260)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 12, "&aStone Pickaxe [12]", "Stone", 6, "&eLuck: &f23")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 12, "STONE", 310)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 13, "&aStone Pickaxe [13]", "Stone", 6, "&eLuck: &f25")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 13, "STONE", 370)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 14, "&aStone Pickaxe [14]", "Stone", 7, "&eLuck: &f27")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 14, "STONE", 430)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 15, "&aStone Pickaxe [15]", "Stone", 7, "&eLuck: &f29")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 15, "STONE", 500)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 16, "&aStone Pickaxe [16]", "Stone", 8, "&eLuck: &f31")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 16, "STONE", 570)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 17, "&aStone Pickaxe [17]", "Stone", 8, "&eLuck: &f33")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 17, "STONE", 650)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 18, "&aStone Pickaxe [18]", "Stone", 9, "&eLuck: &f35")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 18, "STONE", 730)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 19, "&aStone Pickaxe [19]", "Stone", 9, "&eLuck: &f37")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 19, "STONE", 810)
+	
+	game_dataHandler_pickaxe_register("STONE_PICKAXE", 20, "&aStone Pickaxe [20]", "Stone", 10, "&eLuck: &f40")
+	game_dataHandler_upgradableItems_upgradeCost("STONE_PICKAXE", 20, "STONE", 1000)
+	
+# COAL PICKAXES
+# COAL PICKAXES
+# COAL PICKAXES
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 1, "&aCoal Pickaxe [1]", "Coal Ore", 0, "&eLuck: &f1")
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 2, "&aCoal Pickaxe [2]", "Coal Ore", 1, "&eLuck: &f3")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 2, "COAL", 5)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 3, "&aCoal Pickaxe [3]", "Coal Ore", 1, "&eLuck: &f5")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 3, "COAL", 10)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 4, "&aCoal Pickaxe [4]", "Coal Ore", 2, "&eLuck: &f7")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 4, "COAL", 20)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 5, "&aCoal Pickaxe [5]", "Coal Ore", 2, "&eLuck: &f9")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 5, "COAL", 40)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 6, "&aCoal Pickaxe [6]", "Coal Ore", 3, "&eLuck: &f11")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 6, "COAL", 60)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 7, "&aCoal Pickaxe [7]", "Coal Ore", 3, "&eLuck: &f13")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 7, "COAL", 80)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 8, "&aCoal Pickaxe [8]", "Coal Ore", 4, "&eLuck: &f15")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 8, "COAL", 120)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 9, "&aCoal Pickaxe [9]", "Coal Ore", 4, "&eLuck: &f17")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 9, "COAL", 160)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 10, "&aCoal Pickaxe [10]", "Coal Ore", 5, "&eLuck: &f19")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 10, "COAL", 210)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 11, "&aCoal Pickaxe [11]", "Coal Ore", 5, "&eLuck: &f21")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 11, "COAL", 260)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 12, "&aCoal Pickaxe [12]", "Coal Ore", 6, "&eLuck: &f23")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 12, "COAL", 310)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 13, "&aCoal Pickaxe [13]", "Coal Ore", 6, "&eLuck: &f25")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 13, "COAL", 370)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 14, "&aCoal Pickaxe [14]", "Coal Ore", 7, "&eLuck: &f27")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 14, "COAL", 430)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 15, "&aCoal Pickaxe [15]", "Coal Ore", 7, "&eLuck: &f29")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 15, "COAL", 500)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 16, "&aCoal Pickaxe [16]", "Coal Ore", 8, "&eLuck: &f31")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 16, "COAL", 570)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 17, "&aCoal Pickaxe [17]", "Coal Ore", 8, "&eLuck: &f33")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 17, "COAL", 650)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 18, "&aCoal Pickaxe [18]", "Coal Ore", 9, "&eLuck: &f35")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 18, "COAL", 730)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 19, "&aCoal Pickaxe [19]", "Coal Ore", 9, "&eLuck: &f37")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 19, "COAL", 810)
+	
+	game_dataHandler_pickaxe_register("COAL_PICKAXE", 20, "&aCoal Pickaxe [20]", "Coal Ore", 10, "&eLuck: &f40")
+	game_dataHandler_upgradableItems_upgradeCost("COAL_PICKAXE", 20, "COAL", 1000)
+
+# IRON PICKAXES
+# IRON PICKAXES
+# IRON PICKAXES
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 1, "&aIron Pickaxe [1]", "Iron Ore", 0, "&eLuck: &f1")
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 2, "&aIron Pickaxe [2]", "Iron Ore", 1, "&eLuck: &f3")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 2, "IRON", 10)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 3, "&aIron Pickaxe [3]", "Iron Ore", 1, "&eLuck: &f5")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 3, "IRON", 20)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 4, "&aIron Pickaxe [4]", "Iron Ore", 2, "&eLuck: &f7")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 4, "IRON", 50)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 5, "&aIron Pickaxe [5]", "Iron Ore", 2, "&eLuck: &f9")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 5, "IRON", 90)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 6, "&aIron Pickaxe [6]", "Iron Ore", 3, "&eLuck: &f11")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 6, "IRON", 150)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 7, "&aIron Pickaxe [7]", "Iron Ore", 3, "&eLuck: &f13")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 7, "IRON", 220)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 8, "&aIron Pickaxe [8]", "Iron Ore", 4, "&eLuck: &f15")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 8, "IRON", 300)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 9, "&aIron Pickaxe [9]", "Iron Ore", 4, "&eLuck: &f17")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 9, "IRON", 410)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 10, "&aIron Pickaxe [10]", "Iron Ore", 5, "&eLuck: &f19")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 10, "IRON", 530)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 11, "&aIron Pickaxe [11]", "Iron Ore", 5, "&eLuck: &f21")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 11, "IRON", 720)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 12, "&aIron Pickaxe [12]", "Iron Ore", 6, "&eLuck: &f23")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 12, "IRON", 980)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 13, "&aIron Pickaxe [13]", "Iron Ore", 6, "&eLuck: &f25")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 13, "IRON", 1250)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 14, "&aIron Pickaxe [14]", "Iron Ore", 7, "&eLuck: &f27")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 14, "IRON", 1600)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 15, "&aIron Pickaxe [15]", "Iron Ore", 7, "&eLuck: &f29")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 15, "IRON", 2150)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 16, "&aIron Pickaxe [16]", "Iron Ore", 8, "&eLuck: &f31")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 16, "IRON", 2700)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 17, "&aIron Pickaxe [17]", "Iron Ore", 8, "&eLuck: &f33")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 17, "IRON", 3250)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 18, "&aIron Pickaxe [18]", "Iron Ore", 9, "&eLuck: &f35")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 18, "IRON", 3900)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 19, "&aIron Pickaxe [19]", "Iron Ore", 9, "&eLuck: &f37")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 19, "IRON", 4500)
+	
+	game_dataHandler_pickaxe_register("IRON_PICKAXE", 20, "&aIron Pickaxe [20]", "Iron Ore", 10, "&eLuck: &f40")
+	game_dataHandler_upgradableItems_upgradeCost("IRON_PICKAXE", 20, "IRON", 5100)
+
+# GOLD PICKAXES
+# GOLD PICKAXES
+# GOLD PICKAXES
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 1, "&aGold Pickaxe [1]", "Gold Ore", 0, "&eLuck: &f1")
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 2, "&aGold Pickaxe [2]", "Gold Ore", 1, "&eLuck: &f3")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 2, "GOLD", 10)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 3, "&aGold Pickaxe [3]", "Gold Ore", 1, "&eLuck: &f5")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 3, "GOLD", 20)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 4, "&aGold Pickaxe [4]", "Gold Ore", 2, "&eLuck: &f7")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 4, "GOLD", 50)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 5, "&aGold Pickaxe [5]", "Gold Ore", 2, "&eLuck: &f9")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 5, "GOLD", 90)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 6, "&aGold Pickaxe [6]", "Gold Ore", 3, "&eLuck: &f11")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 6, "GOLD", 170)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 7, "&aGold Pickaxe [7]", "Gold Ore", 3, "&eLuck: &f13")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 7, "GOLD", 260)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 8, "&aGold Pickaxe [8]", "Gold Ore", 4, "&eLuck: &f15")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 8, "GOLD", 350)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 9, "&aGold Pickaxe [9]", "Gold Ore", 4, "&eLuck: &f17")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 9, "GOLD", 570)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 10, "&aGold Pickaxe [10]", "Gold Ore", 5, "&eLuck: &f19")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 10, "GOLD", 700)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 11, "&aGold Pickaxe [11]", "Gold Ore", 5, "&eLuck: &f21")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 11, "GOLD", 850)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 12, "&aGold Pickaxe [12]", "Gold Ore", 6, "&eLuck: &f23")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 12, "GOLD", 1020)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 13, "&aGold Pickaxe [13]", "Gold Ore", 6, "&eLuck: &f25")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 13, "GOLD", 1300)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 14, "&aGold Pickaxe [14]", "Gold Ore", 7, "&eLuck: &f27")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 14, "GOLD", 1600)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 15, "&aGold Pickaxe [15]", "Gold Ore", 7, "&eLuck: &f29")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 15, "GOLD", 2200)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 16, "&aGold Pickaxe [16]", "Gold Ore", 8, "&eLuck: &f31")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 16, "GOLD", 2900)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 17, "&aGold Pickaxe [17]", "Gold Ore", 8, "&eLuck: &f33")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 17, "GOLD", 3500)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 18, "&aGold Pickaxe [18]", "Gold Ore", 9, "&eLuck: &f35")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 18, "GOLD", 4400)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 19, "&aGold Pickaxe [19]", "Gold Ore", 9, "&eLuck: &f37")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 19, "GOLD", 4800)
+	
+	game_dataHandler_pickaxe_register("GOLD_PICKAXE", 20, "&aGold Pickaxe [20]", "Gold Ore", 10, "&eLuck: &f40")
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_PICKAXE", 20, "GOLD", 5500)
+
+
+# DIAMOND PICKAXES
+# DIAMOND PICKAXES
+# DIAMOND PICKAXES
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 1, "&aDiamond Pickaxe [1]", "Diamond Ore", 0, "&eLuck: &f1")
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 2, "&aDiamond Pickaxe [2]", "Diamond Ore", 1, "&eLuck: &f3")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 2, "DIAMOND", 15)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 3, "&aDiamond Pickaxe [3]", "Diamond Ore", 1, "&eLuck: &f5")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 3, "DIAMOND", 40)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 4, "&aDiamond Pickaxe [4]", "Diamond Ore", 2, "&eLuck: &f7")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 4, "DIAMOND", 120)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 5, "&aDiamond Pickaxe [5]", "Diamond Ore", 2, "&eLuck: &f9")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 5, "DIAMOND", 210)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 6, "&aDiamond Pickaxe [6]", "Diamond Ore", 3, "&eLuck: &f11")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 6, "DIAMOND", 350)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 7, "&aDiamond Pickaxe [7]", "Diamond Ore", 3, "&eLuck: &f13")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 7, "DIAMOND", 520)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 8, "&aDiamond Pickaxe [8]", "Diamond Ore", 4, "&eLuck: &f15")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 8, "DIAMOND", 780)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 9, "&aDiamond Pickaxe [9]", "Diamond Ore", 4, "&eLuck: &f17")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 9, "DIAMOND", 1090)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 10, "&aDiamond Pickaxe [10]", "Diamond Ore", 5, "&eLuck: &f19")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 10, "DIAMOND", 1400)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 11, "&aDiamond Pickaxe [11]", "Diamond Ore", 5, "&eLuck: &f21")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 11, "DIAMOND", 1850)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 12, "&aDiamond Pickaxe [12]", "Diamond Ore", 6, "&eLuck: &f23")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 12, "DIAMOND", 2600)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 13, "&aDiamond Pickaxe [13]", "Diamond Ore", 6, "&eLuck: &f25")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 13, "DIAMOND", 3500)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 14, "&aDiamond Pickaxe [14]", "Diamond Ore", 7, "&eLuck: &f27")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 14, "DIAMOND", 4500)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 15, "&aDiamond Pickaxe [15]", "Diamond Ore", 7, "&eLuck: &f29")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 15, "DIAMOND", 5700)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 16, "&aDiamond Pickaxe [16]", "Diamond Ore", 8, "&eLuck: &f31")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 16, "DIAMOND", 6900)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 17, "&aDiamond Pickaxe [17]", "Diamond Ore", 8, "&eLuck: &f33")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 17, "DIAMOND", 8100)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 18, "&aDiamond Pickaxe [18]", "Diamond Ore", 9, "&eLuck: &f35")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 18, "DIAMOND", 9600)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 19, "&aDiamond Pickaxe [19]", "Diamond Ore", 9, "&eLuck: &f37")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 19, "DIAMOND", 11000)
+	
+	game_dataHandler_pickaxe_register("DIAMOND_PICKAXE", 20, "&aDiamond Pickaxe [20]", "Diamond Ore", 10, "&eLuck: &f40")
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_PICKAXE", 20, "DIAMOND", 14000)
+
+# EMERALD PICKAXES
+# EMERALD PICKAXES
+# EMERALD PICKAXES
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 1, "&aEmerald Pickaxe [1]", "Emerald Ore", 0, "&eLuck: &f1")
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 2, "&aEmerald Pickaxe [2]", "Emerald Ore", 1, "&eLuck: &f3")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 2, "EMERALD", 15)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 3, "&aEmerald Pickaxe [3]", "Emerald Ore", 1, "&eLuck: &f5")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 3, "EMERALD", 50)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 4, "&aEmerald Pickaxe [4]", "Emerald Ore", 2, "&eLuck: &f7")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 4, "EMERALD", 150)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 5, "&aEmerald Pickaxe [5]", "Emerald Ore", 2, "&eLuck: &f9")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 5, "EMERALD", 270)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 6, "&aEmerald Pickaxe [6]", "Emerald Ore", 3, "&eLuck: &f11")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 6, "EMERALD", 400)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 7, "&aEmerald Pickaxe [7]", "Emerald Ore", 3, "&eLuck: &f13")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 7, "EMERALD", 560)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 8, "&aEmerald Pickaxe [8]", "Emerald Ore", 4, "&eLuck: &f15")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 8, "EMERALD", 740)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 9, "&aEmerald Pickaxe [9]", "Emerald Ore", 4, "&eLuck: &f17")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 9, "EMERALD", 1000)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 10, "&aEmerald Pickaxe [10]", "Emerald Ore", 5, "&eLuck: &f19")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 10, "EMERALD", 1300)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 11, "&aEmerald Pickaxe [11]", "Emerald Ore", 5, "&eLuck: &f21")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 11, "EMERALD", 1750)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 12, "&aEmerald Pickaxe [12]", "Emerald Ore", 6, "&eLuck: &f23")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 12, "EMERALD", 2100)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 13, "&aEmerald Pickaxe [13]", "Emerald Ore", 6, "&eLuck: &f25")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 13, "EMERALD", 2600)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 14, "&aEmerald Pickaxe [14]", "Emerald Ore", 7, "&eLuck: &f27")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 14, "EMERALD", 3500)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 15, "&aEmerald Pickaxe [15]", "Emerald Ore", 7, "&eLuck: &f29")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 15, "EMERALD", 5600)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 16, "&aEmerald Pickaxe [16]", "Emerald Ore", 8, "&eLuck: &f31")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 16, "EMERALD", 7900)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 17, "&aEmerald Pickaxe [17]", "Emerald Ore", 8, "&eLuck: &f33")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 17, "EMERALD", 9500)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 18, "&aEmerald Pickaxe [18]", "Emerald Ore", 9, "&eLuck: &f35")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 18, "EMERALD", 12900)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 19, "&aEmerald Pickaxe [19]", "Emerald Ore", 9, "&eLuck: &f37")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 19, "EMERALD", 14700)
+	
+	game_dataHandler_pickaxe_register("EMERALD_PICKAXE", 20, "&aEmerald Pickaxe [20]", "Emerald Ore", 10, "&eLuck: &f40")
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_PICKAXE", 20, "EMERALD", 18000)
+
+# REDSTONE PICKAXES
+# REDSTONE PICKAXES
+# REDSTONE PICKAXES
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 1, "&aRedstone Pickaxe [1]", "Redstone Ore", 0, "&eLuck: &f1")
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 2, "&aRedstone Pickaxe [2]", "Redstone Ore", 1, "&eLuck: &f3")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 2, "REDSTONE", 75)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 3, "&aRedstone Pickaxe [3]", "Redstone Ore", 1, "&eLuck: &f5")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 3, "REDSTONE", 160)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 4, "&aRedstone Pickaxe [4]", "Redstone Ore", 2, "&eLuck: &f7")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 4, "REDSTONE", 340)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 5, "&aRedstone Pickaxe [5]", "Redstone Ore", 2, "&eLuck: &f9")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 5, "REDSTONE", 720)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 6, "&aRedstone Pickaxe [6]", "Redstone Ore", 3, "&eLuck: &f11")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 6, "REDSTONE", 1200)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 7, "&aRedstone Pickaxe [7]", "Redstone Ore", 3, "&eLuck: &f13")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 7, "REDSTONE", 1900)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 8, "&aRedstone Pickaxe [8]", "Redstone Ore", 4, "&eLuck: &f15")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 8, "REDSTONE", 2800)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 9, "&aRedstone Pickaxe [9]", "Redstone Ore", 4, "&eLuck: &f17")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 9, "REDSTONE", 4000)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 10, "&aRedstone Pickaxe [10]", "Redstone Ore", 5, "&eLuck: &f19")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 10, "REDSTONE", 5600)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 11, "&aRedstone Pickaxe [11]", "Redstone Ore", 5, "&eLuck: &f21")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 11, "REDSTONE", 7900)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 12, "&aRedstone Pickaxe [12]", "Redstone Ore", 6, "&eLuck: &f23")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 12, "REDSTONE", 12000)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 13, "&aRedstone Pickaxe [13]", "Redstone Ore", 6, "&eLuck: &f25")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 13, "REDSTONE", 16000)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 14, "&aRedstone Pickaxe [14]", "Redstone Ore", 7, "&eLuck: &f27")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 14, "REDSTONE", 23000)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 15, "&aRedstone Pickaxe [15]", "Redstone Ore", 7, "&eLuck: &f29")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 15, "REDSTONE", 32000)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 16, "&aRedstone Pickaxe [16]", "Redstone Ore", 8, "&eLuck: &f31")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 16, "REDSTONE", 43000)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 17, "&aRedstone Pickaxe [17]", "Redstone Ore", 8, "&eLuck: &f33")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 17, "REDSTONE", 57000)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 18, "&aRedstone Pickaxe [18]", "Redstone Ore", 9, "&eLuck: &f35")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 18, "REDSTONE", 70000)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 19, "&aRedstone Pickaxe [19]", "Redstone Ore", 9, "&eLuck: &f37")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 19, "REDSTONE", 90000)
+	
+	game_dataHandler_pickaxe_register("REDSTONE_PICKAXE", 20, "&aRedstone Pickaxe [20]", "Redstone Ore", 10, "&eLuck: &f40")
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_PICKAXE", 20, "REDSTONE", 120000)
+
+# AXES
+
+	game_dataHandler_axe_register("AXE", 1, "&aAxe [1]", "Birch Plank", 0, "&eLuck: &f1")
+	
+	game_dataHandler_axe_register("AXE", 2, "&aAxe [2]", "Birch Plank", 1, "&eLuck: &f3")
+	game_dataHandler_upgradableItems_upgradeCost("AXE", 2, "TICKET", 200)
+
+	game_dataHandler_axe_register("AXE", 3, "&aAxe [3]", "Birch Plank", 1, "&eLuck: &f5")
+	game_dataHandler_upgradableItems_upgradeCost("AXE", 3, "TICKET", 500)
+	
+	game_dataHandler_axe_register("AXE", 4, "&aAxe [4]", "Birch Plank", 2, "&eLuck: &f7")
+	game_dataHandler_upgradableItems_upgradeCost("AXE", 4, "TICKET", 1000)
+	
+	game_dataHandler_axe_register("AXE", 5, "&aAxe [5]", "Birch Plank", 2, "&eLuck: &f9")
+	game_dataHandler_upgradableItems_upgradeCost("AXE", 5, "TICKET", 1800)
+
+# ARMOR
+# ARMOR
+# ARMOR
+
+	# COLOR SOURCE: https://minecraftcommand.science/armor-color
+
+	game_dataHandler_items_register("NOOB_MASK", (("Partydragen" parsed as offline player)'s skull named "&aNoob Mask" with lore "&7&oArmor||&f||&eMaximum Health: &c-90||&eMelee Damage: &f+2"))
+
+	game_dataHandler_items_register("CHICKEN_MASK", (("MHF_Chicken" parsed as offline player)'s skull named "&aChicken Mask" with lore "&7&oArmor||&f||&eMaximum Health: &f+5||&eAll Damage: &f+1"))
+	game_dataHandler_items_register("COW_MASK", (("Cow" parsed as offline player)'s skull named "&aCow Mask" with lore "&7&oArmor||&f||&eProtection: &f+5%%||&eAll Damage: &f+3"))
+	game_dataHandler_items_register("SHEEP_MASK", (("MHF_Sheep" parsed as offline player)'s skull named "&aSheep Mask" with lore "&7&oArmor||&f||&eHealth Regeneration: &f+1%%"))
+	game_dataHandler_items_register("WOLF_MASK", (("ulvekongen2013" parsed as offline player)'s skull named "&aWolf Mask" with lore "&7&oArmor||&f||&eAll Damage: &f+6||&eMovement Speed: &f+5%%"))
+	game_dataHandler_items_register("RABBIT_MASK", (("MHF_Rabbit" parsed as offline player)'s skull named "&aRabbit Mask" with lore "&7&oArmor||&f||&eMaximum Health: &c-30||&eMovement Speed: &f+50%%"))
+	game_dataHandler_items_register("DONKEY_MASK", (("420FeetEat" parsed as offline player)'s skull named "&aDonkey Mask" with lore "&7&oArmor||&f||&eHealth Regeneration: &f+3%%||&eMovement Speed: &c-10%%"))
+	game_dataHandler_items_register("SPIDER_MASK", (("MHF_Spider" parsed as offline player)'s skull named "&aSpider Mask" with lore "&7&oArmor||&f||&eCritical Power: &f+200%%||&eMovement Speed: &f+10%%"))
+	game_dataHandler_items_register("POLAR_BEAR_MASK", (("1WU" parsed as offline player)'s skull named "&aPolar Bear Mask" with lore "&7&oArmor||&f||&eMaximum Health: &f+30||&eProtection: &f+5%%||&eAll Damage: &f+10||&eMovement Speed: &c-20%%"))
+
+
+	game_dataHandler_armor_register("STONE_CHESTPLATE", 2, 1, "&aStone Chestplate [1]", "&eProtection: &f+5%%", 9470337)
+
+	game_dataHandler_armor_register("STONE_CHESTPLATE", 2, 2, "&aStone Chestplate [2]", "&eProtection: &f+7%%", 9470337)
+	game_dataHandler_upgradableItems_upgradeCost("STONE_CHESTPLATE", 2, "STONE", 30)
+
+	game_dataHandler_armor_register("STONE_CHESTPLATE", 2, 3, "&aStone Chestplate [3]", "&eProtection: &f+9%%", 9470337)
+	game_dataHandler_upgradableItems_upgradeCost("STONE_CHESTPLATE", 3, "STONE", 90)
+
+	game_dataHandler_armor_register("STONE_CHESTPLATE", 2, 4, "&aStone Chestplate [4]", "&eProtection: &f+12%%", 9470337)
+	game_dataHandler_upgradableItems_upgradeCost("STONE_CHESTPLATE", 4, "STONE", 270)
+
+	game_dataHandler_armor_register("STONE_CHESTPLATE", 2, 5, "&aStone Chestplate [5]", "&eProtection: &f+15%%", 9470337)
+	game_dataHandler_upgradableItems_upgradeCost("STONE_CHESTPLATE", 5, "STONE", 450)
+
+
+
+	game_dataHandler_armor_register("COAL_CHESTPLATE", 2, 1, "&aCoal Chestplate [1]", "&eProtection: &f+10%%", 2631463)
+
+	game_dataHandler_armor_register("COAL_CHESTPLATE", 2, 2, "&aCoal Chestplate [2]", "&eProtection: &f+12%%", 2631463)
+	game_dataHandler_upgradableItems_upgradeCost("COAL_CHESTPLATE", 2, "COAL", 45)
+
+	game_dataHandler_armor_register("COAL_CHESTPLATE", 2, 3, "&aCoal Chestplate [3]", "&eProtection: &f+14%%", 2631463)
+	game_dataHandler_upgradableItems_upgradeCost("COAL_CHESTPLATE", 3, "COAL", 150)
+
+	game_dataHandler_armor_register("COAL_CHESTPLATE", 2, 4, "&aCoal Chestplate [4]", "&eProtection: &f+17%%", 2631463)
+	game_dataHandler_upgradableItems_upgradeCost("COAL_CHESTPLATE", 4, "COAL", 480)
+
+	game_dataHandler_armor_register("COAL_CHESTPLATE", 2, 5, "&aCoal Chestplate [5]", "&eProtection: &f+20%%", 2631463)
+	game_dataHandler_upgradableItems_upgradeCost("COAL_CHESTPLATE", 5, "COAL", 990)
+
+
+
+	game_dataHandler_armor_register("IRON_CHESTPLATE", 2, 1, "&aIron Chestplate [1]", "&eProtection: &f+15%%", 15527148)
+
+	game_dataHandler_armor_register("IRON_CHESTPLATE", 2, 2, "&aIron Chestplate [2]", "&eProtection: &f+18%%", 15527148)
+	game_dataHandler_upgradableItems_upgradeCost("IRON_CHESTPLATE", 2, "IRON", 70)
+
+	game_dataHandler_armor_register("IRON_CHESTPLATE", 2, 3, "&aIron Chestplate [3]", "&eProtection: &f+21%%", 15527148)
+	game_dataHandler_upgradableItems_upgradeCost("IRON_CHESTPLATE", 3, "IRON", 230)
+
+	game_dataHandler_armor_register("IRON_CHESTPLATE", 2, 4, "&aIron Chestplate [4]", "&eProtection: &f+25%%", 15527148)
+	game_dataHandler_upgradableItems_upgradeCost("IRON_CHESTPLATE", 4, "IRON", 670)
+
+	game_dataHandler_armor_register("IRON_CHESTPLATE", 2, 5, "&aIron Chestplate [5]", "&eProtection: &f+29%%", 15527148)
+	game_dataHandler_upgradableItems_upgradeCost("IRON_CHESTPLATE", 5, "IRON", 1300)
+
+
+
+	game_dataHandler_armor_register("GOLD_CHESTPLATE", 2, 1, "&aGold Chestplate [1]", "&eProtection: &f+20%%", 16768768)
+
+	game_dataHandler_armor_register("GOLD_CHESTPLATE", 2, 2, "&aGold Chestplate [2]", "&eProtection: &f+23%%", 16768768)
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_CHESTPLATE", 2, "GOLD", 150)
+
+	game_dataHandler_armor_register("GOLD_CHESTPLATE", 2, 3, "&aGold Chestplate [3]", "&eProtection: &f+26%%", 16768768)
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_CHESTPLATE", 3, "GOLD", 530)
+
+	game_dataHandler_armor_register("GOLD_CHESTPLATE", 2, 4, "&aGold Chestplate [4]", "&eProtection: &f+30%%", 16768768)
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_CHESTPLATE", 4, "GOLD", 1200)
+
+	game_dataHandler_armor_register("GOLD_CHESTPLATE", 2, 5, "&aGold Chestplate [5]", "&eProtection: &f+34%%", 16768768)
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_CHESTPLATE", 5, "GOLD", 1700)
+
+
+
+	game_dataHandler_armor_register("DIAMOND_CHESTPLATE", 2, 1, "&aDiamond Chestplate [1]", "&eProtection: &f+25%%", 55295)
+
+	game_dataHandler_armor_register("DIAMOND_CHESTPLATE", 2, 2, "&aDiamond Chestplate [2]", "&eProtection: &f+29%%", 55295)
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_CHESTPLATE", 2, "DIAMOND", 310)
+
+	game_dataHandler_armor_register("DIAMOND_CHESTPLATE", 2, 3, "&aDiamond Chestplate [3]", "&eProtection: &f+33%%", 55295)
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_CHESTPLATE", 3, "DIAMOND", 990)
+
+	game_dataHandler_armor_register("DIAMOND_CHESTPLATE", 2, 4, "&aDiamond Chestplate [4]", "&eProtection: &f+38%%", 55295)
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_CHESTPLATE", 4, "DIAMOND", 2100)
+
+	game_dataHandler_armor_register("DIAMOND_CHESTPLATE", 2, 5, "&aDiamond Chestplate [5]", "&eProtection: &f+43%%", 55295)
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_CHESTPLATE", 5, "DIAMOND", 3500)
+
+
+
+	game_dataHandler_armor_register("EMERALD_CHESTPLATE", 2, 1, "&aEmerald Chestplate [1]", "&eProtection: &f+30%%", 2872586)
+
+	game_dataHandler_armor_register("EMERALD_CHESTPLATE", 2, 2, "&aEmerald Chestplate [2]", "&eProtection: &f+34%%", 2872586)
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_CHESTPLATE", 2, "EMERALD", 420)
+
+	game_dataHandler_armor_register("EMERALD_CHESTPLATE", 2, 3, "&aEmerald Chestplate [3]", "&eProtection: &f+39%%", 2872586)
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_CHESTPLATE", 3, "EMERALD", 1400)
+
+	game_dataHandler_armor_register("EMERALD_CHESTPLATE", 2, 4, "&aEmerald Chestplate [4]", "&eProtection: &f+44%%", 2872586)
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_CHESTPLATE", 4, "EMERALD", 2800)
+
+	game_dataHandler_armor_register("EMERALD_CHESTPLATE", 2, 5, "&aEmerald Chestplate [5]", "&eProtection: &f+49%%", 2872586)
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_CHESTPLATE", 5, "EMERALD", 4300)
+
+
+
+	game_dataHandler_armor_register("REDSTONE_CHESTPLATE", 2, 1, "&aRedstone Chestplate [1]", "&eProtection: &f+35%%", 14483456)
+
+	game_dataHandler_armor_register("REDSTONE_CHESTPLATE", 2, 2, "&aRedstone Chestplate [2]", "&eProtection: &f+40%%", 14483456)
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_CHESTPLATE", 2, "REDSTONE", 720)
+
+	game_dataHandler_armor_register("REDSTONE_CHESTPLATE", 2, 3, "&aRedstone Chestplate [3]", "&eProtection: &f+45%%", 14483456)
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_CHESTPLATE", 3, "REDSTONE", 2100)
+
+	game_dataHandler_armor_register("REDSTONE_CHESTPLATE", 2, 4, "&aRedstone Chestplate [4]", "&eProtection: &f+50%%", 14483456)
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_CHESTPLATE", 4, "REDSTONE", 4000)
+
+	game_dataHandler_armor_register("REDSTONE_CHESTPLATE", 2, 5, "&aRedstone Chestplate [5]", "&eProtection: &f+60%%", 14483456)
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_CHESTPLATE", 5, "REDSTONE", 10000)
+
+# ARMOR - SPECIAL
+# ARMOR - SPECIAL
+# ARMOR - SPECIAL
+
+	game_dataHandler_armor_register("HARDENED_BRONZE_CHESTPLATE", 2, 1, "&aHardened Bronze Chestplate [1]", "&eMelee Damage: &f+3||&eProtection: &f+5%%", 12025888)
+	game_dataHandler_armor_register("HARDENED_BRONZE_LEGGINGS", 3, 1, "&aHardened Bronze Leggings [1]", "&eMelee Damage: &f+2", 12025888)
+	game_dataHandler_armor_register("BRASH_KNIGHT_CHESTPLATE", 2, 1, "&aBrash Knight Chestplate [1]", "&eMelee Damage: &f+9||&eProtection: &f+16%%", 5658198)
+	game_dataHandler_armor_register("BRASH_KNIGHT_LEGGINGS", 3, 1, "&aBrash Knight Leggings [1]", "&eMelee Damage: &f+7", 5658198)
+	game_dataHandler_armor_register("IVORY_CHESTPLATE", 2, 1, "&aIvory Chestplate [1]", "&eMelee Damage: &f+17||&eMovement Speed: &f+15%%||&eProtection: &f+24%%", 13158600)
+	game_dataHandler_armor_register("IVORY_LEGGINGS", 3, 1, "&aIvory Leggings [1]", "&eMelee Damage: &f+13||&eMovement Speed: &f+9%%", 13158600)
+	game_dataHandler_armor_register("CORRUPTED_GOLD_CHESTPLATE", 2, 1, "&aCorrupted Gold Chestplate [1]", "&eMelee Damage: &f+25||&eProtection: &f+31%%", 14205478)
+	game_dataHandler_armor_register("CORRUPTED_GOLD_LEGGINGS", 3, 1, "&aCorrupted Gold Leggings [1]", "&eMelee Damage: &f+19", 14205478)
+	game_dataHandler_armor_register("GUILD_KNIGHT_CHESTPLATE", 2, 1, "&aGuild Knight Chestplate [1]", "&eMelee Damage: &f+38||&eHealth Regeneration: &f+3%%||&eProtection: &f+49%%", 16744296)
+	game_dataHandler_armor_register("GUILD_KNIGHT_LEGGINGS", 3, 1, "&aGuild Knight Leggings [1]", "&eMelee Damage: &f+31||&eHealth Regeneration: &f+2%%", 16744296)
+	game_dataHandler_armor_register("VOID_LORD_CHESTPLATE", 2, 1, "&aVoid Lord Chestplate [1]", "&eMelee Damage: &f+42||&eCritical Power: &f+50%%||&eProtection: &f+58%%", 7490425)
+	game_dataHandler_armor_register("VOID_LORD_LEGGINGS", 3, 1, "&aVoid Lord Leggings [1]", "&eMelee Damage: &f+36||&eCritical Power: &f+50%%", 7490425)
+
+
+
+	game_dataHandler_armor_register("DARK_HUNTER_CHESTPLATE", 2, 1, "&aDark Hunter Chestplate [1]", "&eRanged Damage: &f+5||&eProtection: &f+3%%", 4605510)
+	game_dataHandler_armor_register("DARK_HUNTER_LEGGINGS", 3, 1, "&aDark Hunter Leggings [1]", "&eRanged Damage: &f+4", 4605510)
+	game_dataHandler_armor_register("WOODLAND_RANGER_CHESTPLATE", 2, 1, "&aWoodland Ranger Chestplate [1]", "&eRanged Damage: &f+13||&eProtection: &f+5%%", 12805376)
+	game_dataHandler_armor_register("WOODLAND_RANGER_LEGGINGS", 3, 1, "&aWoodland Ranger Leggings [1]", "&eRanged Damage: &f+9", 12805376)
+	game_dataHandler_armor_register("WOODWHACK_LEGIONNAIRE_CHESTPLATE", 2, 1, "&aWoodwhack Legionnaire Chestplate [1]", "&eRanged Damage: &f+19||&eProtection: &f+17%%", 4596736)
+	game_dataHandler_armor_register("WOODWHACK_LEGIONNAIRE_LEGGINGS", 3, 1, "&aWoodwhack Legionnaire Leggings [1]", "&eRanged Damage: &f+16", 4596736)
+	game_dataHandler_armor_register("GAUNTLET_FURY_CHESTPLATE", 2, 1, "&aGauntlet Fury Chestplate [1]", "&eRanged Damage: &f+27||&eProtection: &f+28%%", 16725760)
+	game_dataHandler_armor_register("GAUNTLET_FURY_LEGGINGS", 3, 1, "&aGauntlet Fury Leggings [1]", "&eRanged Damage: &f+24", 16725760)
+	game_dataHandler_armor_register("WORLD_SCULPTOR_CHESTPLATE", 2, 1, "&aWorld Sculptor Chestplate [1]", "&eRanged Damage: &f+41||&eArrow Return: &f+25%%||&eProtection: &f+34%%", 15848192)
+	game_dataHandler_armor_register("WORLD_SCULPTOR_LEGGINGS", 3, 1, "&aWorld Sculptor Leggings [1]", "&eRanged Damage: &f+37||&eArrow Return: &f+25%%", 15848192)
+	game_dataHandler_armor_register("NIGHTMARE_PROWLER_CHESTPLATE", 2, 1, "&aNightmare Prowler Chestplate [1]", "&eRanged Damage: &f+49||&eCritical Power: &f+150%%||&eProtection: &f+49%%", 12826199)
+	game_dataHandler_armor_register("NIGHTMARE_PROWLER_LEGGINGS", 3, 1, "&aNightmare Prowler Leggings [1]", "&eRanged Damage: &f+45||&eCritical Power: &f+100%%", 12826199)
+
+
+
+	game_dataHandler_armor_register("PATCHED_CHESTPLATE", 2, 1, "&aPatched Chestplate [1]", "&eAll Damage: &f+2||&eProtection: &f+1%%", 9998951)
+	game_dataHandler_armor_register("PATCHED_LEGGINGS", 3, 1, "&aPatched Leggings [1]", "&eAll Damage: &f+1", 9998951)
+	game_dataHandler_armor_register("GARDENDWELLER_CHESTPLATE", 2, 1, "&aGardendweller Chestplate [1]", "&eAll Damage: &f+5||&eProtection: &f+7%%", 4097059)
+	game_dataHandler_armor_register("GARDENDWELLER_LEGGINGS", 3, 1, "&aGardendweller LEGGINGS [1]", "&eAll Damage: &f+3", 4097059)
+	game_dataHandler_armor_register("KNIGHT_ARMY_CHESTPLATE", 2, 1, "&aKnight's Army Chestplate [1]", "&eAll Damage: &f+13||&eMovement Speed: &c-8%%||&eProtection: &f+16%%", 4097059)
+	game_dataHandler_armor_register("KNIGHT_ARMY_LEGGINGS", 3, 1, "&aKnight's Army Leggings [1]", "&eAll Damage: &f+11||&eMovement Speed: &c-6%%", 4097059)
+	game_dataHandler_armor_register("CORRUPTED_ONYX_CHESTPLATE", 2, 1, "&aCorrupted Onyx Chestplate [1]", "&eAll Damage: &f+23||&eProtection: &f+29%%", 15856113)
+	game_dataHandler_armor_register("CORRUPTED_ONYX_LEGGINGS", 3, 1, "&aCorrupted Onyx Leggings [1]", "&eAll Damage: &f+17", 15856113)
+	game_dataHandler_armor_register("FORGOTTEN_LIFE_CHESTPLATE", 2, 1, "&aForgotten Life Chestplate [1]", "&eAll Damage: &f+34||&eCritical Chance: &f+5%%||&eProtection: &f+37%%", 13255935)
+	game_dataHandler_armor_register("FORGOTTEN_LIFE_LEGGINGS", 3, 1, "&aForgotten Life Leggings [1]", "&eAll Damage: &f+27||&eCritical Chance: &f+5%%", 13255935)
+
+
+
+	game_dataHandler_armor_register("CRABSUIT_CHESTPLATE", 2, 1, "&aCrabsuit Chestplate [1]", "&eMovement Speed: &f+30%%", 3790813)
+	game_dataHandler_armor_register("CRABSUIT_LEGGINGS", 3, 1, "&aCrabsuit Leggings [1]", "&eMovement Speed: &f+25%%", 16740410)
+	game_dataHandler_armor_register("COURTING_KNIGHT_CHESTPLATE", 2, 1, "&aCourting Knight Chestplate [1]", "&eHealth Regeneration: &f+6%%", 11315109)
+	game_dataHandler_armor_register("COURTING_KNIGHT_LEGGINGS", 3, 1, "&aCourting Knight Leggings [1]", "&eHealth Regeneration: &f+4%%", 13847576)
+	game_dataHandler_armor_register("CLOWN_FISH_CHESTPLATE", 2, 1, "&aClown Fish Chestplate [1]", "&eMaximum Health: &f+20||&eHealth Regeneration: &f+2%%||&eAll Damage: &f+2%%||&eProtection: &f+20%%||&eMovement Speed: &f+2%%||&eCritical Chance: &f+2%%||&eCritical Power: &f+20%%||&eArrow Return: &f+2%%", 16741376)
+	game_dataHandler_armor_register("CLOWN_FISH_LEGGINGS", 3, 1, "&aClown Fish Leggings [1]", "&eMaximum Health: &f+20||&eHealth Regeneration: &f+2%%||&eAll Damage: &f+2%%||&eMovement Speed: &f+2%%||&eCritical Chance: &f+2%%||&eCritical Power: &f+20%%||&eArrow Return: &f+2%%", 15000804)
+
+	game_dataHandler_armor_register("DEVELOPMENT_CHESTPLATE", 2, 1, "&aDevelopment Chestplate [1]", "&eMaximum Health: &f+999900", 15000804)
+
+# WEAPON
+# WEAPON
+# WEAPON
+
+	game_dataHandler_weapon_register("STONE_SWORD", 1, "&aStone Sword [1]", "&eMelee Damage: &f+5", IRON_SWORD)
+
+	game_dataHandler_weapon_register("STONE_SWORD", 2, "&aStone Sword [2]", "&eMelee Damage: &f+6", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("STONE_SWORD", 2, "STONE", 15)
+	
+	game_dataHandler_weapon_register("STONE_SWORD", 3, "&aStone Sword [3]", "&eMelee Damage: &f+7", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("STONE_SWORD", 3, "STONE", 60)
+	
+	game_dataHandler_weapon_register("STONE_SWORD", 4, "&aStone Sword [4]", "&eMelee Damage: &f+8", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("STONE_SWORD", 4, "STONE", 240)
+	
+	game_dataHandler_weapon_register("STONE_SWORD", 5, "&aStone Sword [5]", "&eMelee Damage: &f+9", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("STONE_SWORD", 5, "STONE", 980)
+
+
+
+	game_dataHandler_weapon_register("COAL_SWORD", 1, "&aCoal Sword [1]", "&eMelee Damage: &f+6", IRON_SWORD)
+
+	game_dataHandler_weapon_register("COAL_SWORD", 2, "&aCoal Sword [2]", "&eMelee Damage: &f+8", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("COAL_SWORD", 2, "COAL", 20)
+	
+	game_dataHandler_weapon_register("COAL_SWORD", 3, "&aCoal Sword [3]", "&eMelee Damage: &f+10", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("COAL_SWORD", 3, "COAL", 75)
+	
+	game_dataHandler_weapon_register("COAL_SWORD", 4, "&aCoal Sword [4]", "&eMelee Damage: &f+12", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("COAL_SWORD", 4, "COAL", 300)
+	
+	game_dataHandler_weapon_register("COAL_SWORD", 5, "&aCoal Sword [5]", "&eMelee Damage: &f+14", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("COAL_SWORD", 5, "COAL", 1100)
+
+
+
+	game_dataHandler_weapon_register("IRON_SWORD", 1, "&aIron Sword [1]", "&eMelee Damage: &f+9", IRON_SWORD)
+
+	game_dataHandler_weapon_register("IRON_SWORD", 2, "&aIron Sword [2]", "&eMelee Damage: &f+11", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("IRON_SWORD", 2, "IRON", 25)
+	
+	game_dataHandler_weapon_register("IRON_SWORD", 3, "&aIron Sword [3]", "&eMelee Damage: &f+13", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("IRON_SWORD", 3, "IRON", 95)
+	
+	game_dataHandler_weapon_register("IRON_SWORD", 4, "&aIron Sword [4]", "&eMelee Damage: &f+16", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("IRON_SWORD", 4, "IRON", 450)
+	
+	game_dataHandler_weapon_register("IRON_SWORD", 5, "&aIron Sword [5]", "&eMelee Damage: &f+19", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("IRON_SWORD", 5, "IRON", 1300)
+
+
+
+	game_dataHandler_weapon_register("GOLD_SWORD", 1, "&aGold Sword [1]", "&eMelee Damage: &f+12", IRON_SWORD)
+
+	game_dataHandler_weapon_register("GOLD_SWORD", 2, "&aGold Sword [2]", "&eMelee Damage: &f+15", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_SWORD", 2, "GOLD", 30)
+	
+	game_dataHandler_weapon_register("GOLD_SWORD", 3, "&aGold Sword [3]", "&eMelee Damage: &f+18", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_SWORD", 3, "GOLD", 150)
+	
+	game_dataHandler_weapon_register("GOLD_SWORD", 4, "&aGold Sword [4]", "&eMelee Damage: &f+21", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_SWORD", 4, "GOLD", 720)
+	
+	game_dataHandler_weapon_register("GOLD_SWORD", 5, "&aGold Sword [5]", "&eMelee Damage: &f+24", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("GOLD_SWORD", 5, "GOLD", 1900)
+	
+	
+	
+	game_dataHandler_weapon_register("DIAMOND_SWORD", 1, "&aDiamond Sword [1]", "&eMelee Damage: &f+17", IRON_SWORD)
+
+	game_dataHandler_weapon_register("DIAMOND_SWORD", 2, "&aDiamond Sword [2]", "&eMelee Damage: &f+20", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_SWORD", 2, "DIAMOND", 50)
+	
+	game_dataHandler_weapon_register("DIAMOND_SWORD", 3, "&aDiamond Sword [3]", "&eMelee Damage: &f+23", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_SWORD", 3, "DIAMOND", 210)
+	
+	game_dataHandler_weapon_register("DIAMOND_SWORD", 4, "&aDiamond Sword [4]", "&eMelee Damage: &f+26", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_SWORD", 4, "DIAMOND", 960)
+	
+	game_dataHandler_weapon_register("DIAMOND_SWORD", 5, "&aDiamond Sword [5]", "&eMelee Damage: &f+29", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("DIAMOND_SWORD", 5, "DIAMOND", 2700)
+
+
+
+	game_dataHandler_weapon_register("EMERALD_SWORD", 1, "&aEmerald Sword [1]", "&eMelee Damage: &f+21", IRON_SWORD)
+
+	game_dataHandler_weapon_register("EMERALD_SWORD", 2, "&aEmerald Sword [2]", "&eMelee Damage: &f+23", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_SWORD", 2, "EMERALD", 90)
+	
+	game_dataHandler_weapon_register("EMERALD_SWORD", 3, "&aEmerald Sword [3]", "&eMelee Damage: &f+26", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_SWORD", 3, "EMERALD", 530)
+	
+	game_dataHandler_weapon_register("EMERALD_SWORD", 4, "&aEmerald Sword [4]", "&eMelee Damage: &f+30", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_SWORD", 4, "EMERALD", 1600)
+	
+	game_dataHandler_weapon_register("EMERALD_SWORD", 5, "&aEmerald Sword [5]", "&eMelee Damage: &f+34", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("EMERALD_SWORD", 5, "EMERALD", 5000)
+
+
+
+	game_dataHandler_weapon_register("REDSTONE_SWORD", 1, "&aRedstone Sword [1]", "&eMelee Damage: &f+22", IRON_SWORD)
+
+	game_dataHandler_weapon_register("REDSTONE_SWORD", 2, "&aRedstone Sword [2]", "&eMelee Damage: &f+25", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_SWORD", 2, "REDSTONE", 670)
+	
+	game_dataHandler_weapon_register("REDSTONE_SWORD", 3, "&aRedstone Sword [3]", "&eMelee Damage: &f+29", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_SWORD", 3, "REDSTONE", 1380)
+	
+	game_dataHandler_weapon_register("REDSTONE_SWORD", 4, "&aRedstone Sword [4]", "&eMelee Damage: &f+34", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_SWORD", 4, "REDSTONE", 4700)
+	
+	game_dataHandler_weapon_register("REDSTONE_SWORD", 5, "&aRedstone Sword [5]", "&eMelee Damage: &f+39", IRON_SWORD)
+	game_dataHandler_upgradableItems_upgradeCost("REDSTONE_SWORD", 5, "REDSTONE", 17000)
+
+
+
+	game_dataHandler_weapon_register("NOOB_FISHIE", 1, "&anOoB fIsHiE [1]", "&eMelee Damage: &c-9999||&eMovement Speed: &c-99%%", RAW_FISH)
+	game_dataHandler_weapon_register("BUGGED_SWORD", 1, "&a&kBugged Sword&a [&a&k1&a]", "&eMelee Damage: &c&k-10||&eProtection: &c&k-100%%||&eMaximum Health: &f&k+50||&eMovement Speed: &f&k+30%%||&f||&ePassive: &f&kno u", GOLDEN_CARROT)
+	game_dataHandler_weapon_register("DEPRESSED_MINER_SWORD", 1, "&aDepressed Miner's Favorite Sword [1]", "&eMelee Damage: &f+12||&eCritical Chance: &f+8%%||&eCritical Power: &f+200%%", WOODEN_PICKAXE)
+	game_dataHandler_weapon_register("FATTY_SWORD", 1, "&aFatty Sword [1]", "&eMelee Damage: &f+19||&eMaximum Health: &f+90||&eMovement Speed: &c-75%%", GOLDEN_SWORD)
+	game_dataHandler_weapon_register("FIRST_AID_SWORD", 1, "&aFirst Aid Sword [1]", "&eMelee Damage: &c-100||&eProtection: &f+7%%||&eMaximum Health: &c-60||&eHealth Regeneration: &f+14%%||&eMovement Speed: &c-95%%", GOLDEN_SWORD)
+
+	game_dataHandler_weapon_register("FRAIL_WOODEN_SWORD", 1, "&aFrail Wooden Sword [1]", "&eMelee Damage: &f+6||&eMovement Speed: &f+5%%", STICK)
+	game_dataHandler_weapon_register("ANCIENT_SWORD", 1, "&aAncient Sword [1]", "&eMelee Damage: &f+9", STONE_SWORD)
+	game_dataHandler_weapon_register("POWER_AXE", 1, "&aPower Axe [1]", "&eMelee Damage: &f+14||&eMovement Speed: &c-9%%", STONE_AXE)
+	game_dataHandler_weapon_register("GRAND_SWORD", 1, "&aGrand Sword [1]", "&eMelee Damage: &f+17", IRON_SWORD)
+	game_dataHandler_weapon_register("FEATHER_BLADE", 1, "&aFeatherblade [1]", "&eMelee Damage: &f+21", IRON_SWORD)
+	game_dataHandler_weapon_register("KOTONO", 1, "&aKotono [1]", "&eMelee Damage: &f+25", STONE_SWORD)
+	game_dataHandler_weapon_register("INFERNO_HAMMER", 1, "&aInferno Hammer [1]", "&eMelee Damage: &f+29||&eMovement Speed: &c-13%%", GOLDEN_AXE)
+	game_dataHandler_weapon_register("INFERNO_SWORD", 1, "&aInferno Sword [1]", "&eMelee Damage: &f+35", GOLDEN_SWORD)
+	game_dataHandler_weapon_register("ULTRA_BLADE", 1, "&aUltrablade [1]", "&eMelee Damage: &f+41", IRON_SWORD)
+	game_dataHandler_weapon_register("BLACKSMITH_HAMMER", 1, "&aBlacksmith's Hammer [1]", "&eMelee Damage: &f+49||&eMovement Speed: &c-20%%", IRON_AXE)
+	game_dataHandler_weapon_register("ANGEL_GREATSWORD", 1, "&aAngel Greatsword [1]", "&eMelee Damage: &f+53", IRON_SWORD)
+	game_dataHandler_weapon_register("ZOD_SWORD", 1, "&aZodsword [1]", "&eMelee Damage: &f+61||&eMovement Speed: &f+3%%", GOLDEN_SWORD)
+	game_dataHandler_weapon_register("FANTASTIC_GREATSWORD", 1, "&aFantastic Greatsword [1]", "&eMelee Damage: &f+66||&eCritical Power: &f+50%%", DIAMOND_SWORD)
+	game_dataHandler_weapon_register("RED_KING_GREATSWORD", 1, "&aRed King Greatsword [1]", "&eMelee Damage: &f+71||&eMovement Speed: &f+10%%", WOODEN_SWORD)
+	game_dataHandler_weapon_register("HONORING_BLADE", 1, "&aHonoring Blade [1]", "&eMelee Damage: &f+84||&eCritical Chance: &c-8%%", GOLDEN_SWORD)
+
+	game_dataHandler_weapon_register("SILVER_CRYSTAL_ULTRADAGGER", 1, "&aSilver Crystal Ultradagger [1]", "&eMelee Damage: &f+26||&eMaximum Health: &f+25||&eCritical Chance: &f+5%%", BONE)
+	game_dataHandler_weapon_register("VOID_SPIKE_ULTRADAGGER", 1, "&aVoid Spike Ultradagger [1]", "&eMelee Damage: &f+20||&eMaximum Health: &f+35||&eCritical Chance: &f+12%%", STICK)
+
+
+	game_dataHandler_weapon_register("DEVELOPMENT_SWORD", 1, "&aA Sword Used For Development [1]", "&eMelee Damage: &f+100000000||&eProtection: &f+100%%||&eCritical Chance: &f+100%%", BLAZE_ROD)
+
+# SHOP - PICKAXE
+# SHOP - PICKAXE
+# SHOP - PICKAXE
+
+	game_dataHandler_shop_register("PICKAXE", "COAL_PICKAXE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("COAL_PICKAXE_1_ITEM", "STONE_ITEM:900")
+
+	game_dataHandler_shop_register("PICKAXE", "IRON_PICKAXE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("IRON_PICKAXE_1_ITEM", "WOOD_ITEM:1,COAL_ITEM:1500")
+	
+	game_dataHandler_shop_register("PICKAXE", "GOLD_PICKAXE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("GOLD_PICKAXE_1_ITEM", "WOOD_ITEM:22,IRON_ITEM:3000")
+	
+	game_dataHandler_shop_register("PICKAXE", "DIAMOND_PICKAXE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("DIAMOND_PICKAXE_1_ITEM", "COCAINE_ITEM:20,WOOD_ITEM:333,GOLD_ITEM:9000")
+	
+	game_dataHandler_shop_register("PICKAXE", "EMERALD_PICKAXE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("EMERALD_PICKAXE_1_ITEM", "COCAINE_ITEM:60,WOOD_ITEM:4444,DIAMOND_ITEM:17000")
+	
+	game_dataHandler_shop_register("PICKAXE", "REDSTONE_PICKAXE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("REDSTONE_PICKAXE_1_ITEM", "COCAINE_ITEM:150,WOOD_ITEM:55555,EMERALD_ITEM:31000")
+
+
+# BOWS
+# BOWS
+# BOWS
+
+	game_dataHandler_weapon_register("WOODEN_BOW", 1, "&aWooden Bow [1]", "&eRanged Damage: &f+5", (BOW of INFINITY))
+	game_dataHandler_weapon_register("BRONZED_REFLEX_BOW", 1, "&aBronzed Reflex Bow [1]", "&eRanged Damage: &f+15", (BOW of INFINITY))
+	game_dataHandler_weapon_register("MARKSMAN_BOW", 1, "&aMarksman's Bow [1]", "&eRanged Damage: &f+50||&eArrow Return: &f+10%%", (BOW of INFINITY))
+	game_dataHandler_weapon_register("GILED_BOW", 1, "&aGiled Bow [1]", "&eRanged Damage: &f+75", (BOW of INFINITY))
+	game_dataHandler_weapon_register("PHANTOM_BOW", 1, "&aPhantom Bow [1]", "&eRanged Damage: &f95||&eMovement Speed: &f+10%%", (BOW of INFINITY))
+	game_dataHandler_weapon_register("GNOME_LIGHTNING_BOW", 1, "&aGnome Lightning Bow [1]", "&eRanged Damage: &f+135||&eCritical Chance: &f+20%%", (BOW of INFINITY))
+
+
+
+# SHOP - WEAPON
+# SHOP - WEAPON
+# SHOP - WEAPON
+
+	game_dataHandler_shop_register("WEAPON", "STONE_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("STONE_SWORD_1_ITEM", "STONE_ITEM:5")
+
+	game_dataHandler_shop_register("WEAPON", "COAL_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("COAL_SWORD_1_ITEM", "COAL_ITEM:10")
+	
+	game_dataHandler_shop_register("WEAPON", "IRON_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("IRON_SWORD_1_ITEM", "IRON_ITEM:15")
+	
+	game_dataHandler_shop_register("WEAPON", "GOLD_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("GOLD_SWORD_1_ITEM", "GOLD_ITEM:20")
+	
+	game_dataHandler_shop_register("WEAPON", "DIAMOND_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("DIAMOND_SWORD_1_ITEM", "DIAMOND_ITEM:25")
+	
+	game_dataHandler_shop_register("WEAPON", "EMERALD_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("EMERALD_SWORD_1_ITEM", "EMERALD_ITEM:30")
+	
+	game_dataHandler_shop_register("WEAPON", "REDSTONE_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("REDSTONE_SWORD_1_ITEM", "REDSTONE_ITEM:50")
+
+# SHOP - ARMOR
+# SHOP - ARMOR
+# SHOP - ARMOR
+
+	game_dataHandler_shop_register("ARMOR", "STONE_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("STONE_CHESTPLATE_1_ITEM", "STONE_ITEM:5")
+
+	game_dataHandler_shop_register("ARMOR", "COAL_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("COAL_CHESTPLATE_1_ITEM", "COAL_ITEM:10")
+
+	game_dataHandler_shop_register("ARMOR", "IRON_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("IRON_CHESTPLATE_1_ITEM", "IRON_ITEM:20")
+
+	game_dataHandler_shop_register("ARMOR", "GOLD_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("GOLD_CHESTPLATE_1_ITEM", "GOLD_ITEM:40")
+
+	game_dataHandler_shop_register("ARMOR", "DIAMOND_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("DIAMOND_CHESTPLATE_1_ITEM", "DIAMOND_ITEM:80")
+
+	game_dataHandler_shop_register("ARMOR", "EMERALD_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("EMERALD_CHESTPLATE_1_ITEM", "EMERALD_ITEM:160")
+
+	game_dataHandler_shop_register("ARMOR", "REDSTONE_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("REDSTONE_CHESTPLATE_1_ITEM", "REDSTONE_ITEM:320")
+
+# SHOP - SPECIAL
+# SHOP - SPECIAL
+# SHOP - SPECIAL
+
+#	game_dataHandler_shop_register("SPECIAL", "TEMPORARY_BLOCK_ITEM:16")
+#	game_dataHandler_shop_purchaseCost("TEMPORARY_BLOCK_ITEM", "STONE_ITEM:300")
+
+#	game_dataHandler_shop_register("SPECIAL", "WARP_PEARL_ITEM:4")
+#	game_dataHandler_shop_purchaseCost("WARP_PEARL_ITEM", "COCAINE_ITEM:5,GOLD_ITEM:300")
+
+# SHOP - WANDERER
+# SHOP - WANDERER
+# SHOP - WANDERER
+
+	game_dataHandler_shop_register("WANDERER", "FRAIL_WOODEN_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("FRAIL_WOODEN_SWORD_1_ITEM", "STONE_ITEM:500,COAL_ITEM:750,IRON_ITEM:1000")
+
+	game_dataHandler_shop_register("WANDERER", "FEATHER_BLADE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("FEATHER_BLADE_1_ITEM", "COAL_ITEM:15000,IRON_ITEM:2500,FEATHER_ITEM:540")
+
+	game_dataHandler_shop_register("WANDERER", "ANGEL_GREATSWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("ANGEL_GREATSWORD_1_ITEM", "GOLD_ITEM:75000,DIAMOND_ITEM:75000,TICKET_ITEM:700,FRAIL_WOODEN_SWORD_1_ITEM:25")
+
+	game_dataHandler_shop_register("WANDERER", "HONORING_BLADE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("HONORING_BLADE_1_ITEM", "EMERALD_ITEM:210000,REDSTONE_ITEM:320000,POLAR_BEAR_MASK_ITEM:10,FRAIL_WOODEN_SWORD_1_ITEM:100")
+
+	game_dataHandler_shop_register("WANDERER", "SILVER_CRYSTAL_ULTRADAGGER_1_ITEM")
+	game_dataHandler_shop_purchaseCost("SILVER_CRYSTAL_ULTRADAGGER_1_ITEM", "GOLD_ITEM:25000,DIAMOND_ITEM:25000,EMERALD_ITEM:25000,REDSTONE_ITEM:25000,SPIDER_MASK_ITEM:5,POLAR_BEAR_MASK_ITEM:5,FRAIL_WOODEN_SWORD_1_ITEM:80")
+
+	game_dataHandler_shop_register("WANDERER", "FATTY_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("FATTY_SWORD_1_ITEM", "POLAR_BEAR_MASK_ITEM:25,TICKET_ITEM:3500,WOOD_ITEM:75000")
+
+	game_dataHandler_shop_register("WANDERER", "VOID_LORD_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("VOID_LORD_CHESTPLATE_1_ITEM", "REDSTONE_ITEM:150000,SPIDER_MASK_ITEM:1")
+
+	game_dataHandler_shop_register("WANDERER", "VOID_LORD_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("VOID_LORD_LEGGINGS_1_ITEM", "REDSTONE_ITEM:140000,SPIDER_MASK_ITEM:1")
+
+	game_dataHandler_shop_register("WANDERER", "NIGHTMARE_PROWLER_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("NIGHTMARE_PROWLER_CHESTPLATE_1_ITEM", "REDSTONE_ITEM:195000,SPIDER_MASK_ITEM:1")
+
+	game_dataHandler_shop_register("WANDERER", "NIGHTMARE_PROWLER_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("NIGHTMARE_PROWLER_LEGGINGS_1_ITEM", "REDSTONE_ITEM:180000,SPIDER_MASK_ITEM:1")
+
+	game_dataHandler_shop_register("WANDERER", "FORGOTTEN_LIFE_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("FORGOTTEN_LIFE_CHESTPLATE_1_ITEM", "REDSTONE_ITEM:185000,COCAINE_ITEM:30,POLAR_BEAR_MASK_ITEM:1")
+
+	game_dataHandler_shop_register("WANDERER", "FORGOTTEN_LIFE_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("FORGOTTEN_LIFE_LEGGINGS_1_ITEM", "REDSTONE_ITEM:175000,COCAINE_ITEM:20,POLAR_BEAR_MASK_ITEM:1")
+
+	game_dataHandler_shop_register("WANDERER", "CRABSUIT_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("CRABSUIT_CHESTPLATE_1_ITEM", "DIAMOND_ITEM:170000,COCAINE_ITEM:70")
+
+	game_dataHandler_shop_register("WANDERER", "CRABSUIT_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("CRABSUIT_LEGGINGS_1_ITEM", "REDSTONE_ITEM:120000,COCAINE_ITEM:50")
+
+	game_dataHandler_shop_register("WANDERER", "COURTING_KNIGHT_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("COURTING_KNIGHT_CHESTPLATE_1_ITEM", "GOLD_ITEM:600,DIAMOND_ITEM:6000,EMERALD_ITEM:60000")
+
+	game_dataHandler_shop_register("WANDERER", "COURTING_KNIGHT_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("COURTING_KNIGHT_LEGGINGS_1_ITEM", "GOLD_ITEM:450,DIAMOND_ITEM:4500,EMERALD_ITEM:45000")
+
+	game_dataHandler_shop_register("WANDERER", "CLOWN_FISH_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("CLOWN_FISH_CHESTPLATE_1_ITEM", "UNKNOWN_ITEM:1")
+
+	game_dataHandler_shop_register("WANDERER", "CLOWN_FISH_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("CLOWN_FISH_LEGGINGS_1_ITEM", "UNKNOWN_ITEM:1")
+
+# SHOP - LUMBERJACK
+# SHOP - LUMBERJACK
+# SHOP - LUMBERJACK
+
+	game_dataHandler_shop_register("LUMBERJACK", "WOOD_ITEM:64")
+	game_dataHandler_shop_purchaseCost("WOOD_ITEM", "TICKET_ITEM:1024")
+
+	game_dataHandler_shop_register("LUMBERJACK", "NOOB_MASK_ITEM")
+	game_dataHandler_shop_purchaseCost("NOOB_MASK_ITEM", "WOOD_ITEM:25000,LITTER_ITEM:10000,TICKET_ITEM:3500")
+
+	game_dataHandler_shop_register("LUMBERJACK", "WOODLAND_RANGER_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("WOODLAND_RANGER_CHESTPLATE_1_ITEM", "IRON_ITEM:43000")
+	
+	game_dataHandler_shop_register("LUMBERJACK", "WOODLAND_RANGER_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("WOODLAND_RANGER_LEGGINGS_1_ITEM", "IRON_ITEM:36000")
+
+# SHOP - JACK_THE_VILLAGER
+
+	game_dataHandler_shop_register("JACK_THE_VILLAGER", "ULTRA_BLADE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("ULTRA_BLADE_1_ITEM", "GOLD_ITEM:37000,DIAMOND_ITEM:30000,STRING_ITEM:40")
+
+	game_dataHandler_shop_register("JACK_THE_VILLAGER", "RED_KING_GREATSWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("RED_KING_GREATSWORD_1_ITEM", "EMERALD_ITEM:150000,REDSTONE_ITEM:190000,SPIDER_MASK_ITEM:25,FRAIL_WOODEN_SWORD_1_ITEM:70")
+
+	game_dataHandler_shop_register("JACK_THE_VILLAGER", "VOID_SPIKE_ULTRADAGGER_1_ITEM")
+	game_dataHandler_shop_purchaseCost("VOID_SPIKE_ULTRADAGGER_1_ITEM", "POOP_ITEM:5000,FEATHER_ITEM:5000,STRING_ITEM:700,SPIDER_MASK_ITEM:10,POLAR_BEAR_MASK_ITEM:15,FRAIL_WOODEN_SWORD_1_ITEM:210")
+
+	game_dataHandler_shop_register("JACK_THE_VILLAGER", "FIRST_AID_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("FIRST_AID_SWORD_1_ITEM", "EMERALD_ITEM:120000,DIAMOND_ITEM:150000,WOOD_ITEM:120000")
+
+	game_dataHandler_shop_register("JACK_THE_VILLAGER", "GUILD_KNIGHT_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("GUILD_KNIGHT_CHESTPLATE_1_ITEM", "EMERALD_ITEM:70000,WOOD_ITEM:4500")
+
+	game_dataHandler_shop_register("JACK_THE_VILLAGER", "GUILD_KNIGHT_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("GUILD_KNIGHT_LEGGINGS_1_ITEM", "EMERALD_ITEM:65000,WOOD_ITEM:3000")
+
+	game_dataHandler_shop_register("JACK_THE_VILLAGER", "GAUNTLET_FURY_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("GAUNTLET_FURY_CHESTPLATE_1_ITEM", "DIAMOND_ITEM:105000,WOOD_ITEM:6000")
+
+	game_dataHandler_shop_register("JACK_THE_VILLAGER", "GAUNTLET_FURY_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("GAUNTLET_FURY_LEGGINGS_1_ITEM", "DIAMOND_ITEM:89000,WOOD_ITEM:4500")
+
+	game_dataHandler_shop_register("JACK_THE_VILLAGER", "WORLD_SCULPTOR_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("WORLD_SCULPTOR_CHESTPLATE_1_ITEM", "EMERALD_ITEM:160000,COCAINE_ITEM:10")
+
+	game_dataHandler_shop_register("JACK_THE_VILLAGER", "WORLD_SCULPTOR_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("WORLD_SCULPTOR_LEGGINGS_1_ITEM", "EMERALD_ITEM:145000,COCAINE_ITEM:6")
+
+	game_dataHandler_shop_register("JACK_THE_VILLAGER", "KNIGHT_ARMY_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("KNIGHT_ARMY_CHESTPLATE_1_ITEM", "DIAMOND_ITEM:43000")
+
+	game_dataHandler_shop_register("JACK_THE_VILLAGER", "KNIGHT_ARMY_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("KNIGHT_ARMY_LEGGINGS_1_ITEM", "DIAMOND_ITEM:32000")
+
+	game_dataHandler_shop_register("JACK_THE_VILLAGER", "CORRUPTED_ONYX_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("CORRUPTED_ONYX_CHESTPLATE_1_ITEM", "EMERALD_ITEM:110000")
+
+	game_dataHandler_shop_register("JACK_THE_VILLAGER", "CORRUPTED_ONYX_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("CORRUPTED_ONYX_LEGGINGS_1_ITEM", "EMERALD_ITEM:95000")
+
+# SHOP - DEPRESSED_MINER
+
+	game_dataHandler_shop_register("DEPRESSED_MINER", "POWER_AXE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("POWER_AXE_1_ITEM", "COAL_ITEM:2500")
+
+	game_dataHandler_shop_register("DEPRESSED_MINER", "GRAND_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("GRAND_SWORD_1_ITEM", "COAL_ITEM:5000,IRON_ITEM:1000")
+
+	game_dataHandler_shop_register("DEPRESSED_MINER", "DEPRESSED_MINER_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("DEPRESSED_MINER_SWORD_1_ITEM", "WOOD_ITEM:4500,COAL_ITEM:18000,TICKET_ITEM:50")
+
+	game_dataHandler_shop_register("DEPRESSED_MINER", "INFERNO_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("INFERNO_SWORD_1_ITEM", "IRON_ITEM:21000,GOLD_ITEM:17000,MAGMA_ITEM:90")
+
+	game_dataHandler_shop_register("DEPRESSED_MINER", "CORRUPTED_GOLD_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("CORRUPTED_GOLD_CHESTPLATE_1_ITEM", "DIAMOND_ITEM:50000")
+
+	game_dataHandler_shop_register("DEPRESSED_MINER", "CORRUPTED_GOLD_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("CORRUPTED_GOLD_LEGGINGS_1_ITEM", "DIAMOND_ITEM:42000")
+
+	game_dataHandler_shop_register("DEPRESSED_MINER", "DARK_HUNTER_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("DARK_HUNTER_CHESTPLATE_1_ITEM", "COAL_ITEM:15000")
+
+	game_dataHandler_shop_register("DEPRESSED_MINER", "DARK_HUNTER_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("DARK_HUNTER_LEGGINGS_1_ITEM", "COAL_ITEM:9000")
+
+	game_dataHandler_shop_register("DEPRESSED_MINER", "WOODWHACK_LEGIONNAIRE_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("WOODWHACK_LEGIONNAIRE_CHESTPLATE_1_ITEM", "GOLD_ITEM:75000")
+
+	game_dataHandler_shop_register("DEPRESSED_MINER", "WOODWHACK_LEGIONNAIRE_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("WOODWHACK_LEGIONNAIRE_LEGGINGS_1_ITEM", "GOLD_ITEM:67000")
+
+	game_dataHandler_shop_register("DEPRESSED_MINER", "GARDENDWELLER_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("GARDENDWELLER_CHESTPLATE_1_ITEM", "GOLD_ITEM:23000,WOOD_ITEM:150")
+
+	game_dataHandler_shop_register("DEPRESSED_MINER", "GARDENDWELLER_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("GARDENDWELLER_LEGGINGS_1_ITEM", "GOLD_ITEM:11000,WOOD_ITEM:95")
+
+# SHOP - BLACKSMITH
+
+	game_dataHandler_shop_register("BLACKSMITH", "ANCIENT_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("ANCIENT_SWORD_1_ITEM", "COAL_ITEM:750")
+
+	game_dataHandler_shop_register("BLACKSMITH", "KOTONO_1_ITEM")
+	game_dataHandler_shop_purchaseCost("KOTONO_1_ITEM", "IRON_ITEM:8500,GOLD_ITEM:2500")
+
+	game_dataHandler_shop_register("BLACKSMITH", "INFERNO_HAMMER_1_ITEM")
+	game_dataHandler_shop_purchaseCost("INFERNO_HAMMER_1_ITEM", "IRON_ITEM:14000,GOLD_ITEM:9000,MAGMA_ITEM:30")
+
+	game_dataHandler_shop_register("BLACKSMITH", "BLACKSMITH_HAMMER_1_ITEM")
+	game_dataHandler_shop_purchaseCost("BLACKSMITH_HAMMER_1_ITEM", "GOLD_ITEM:50000,DIAMOND_ITEM:55000,WOOD_ITEM:40000")
+
+	game_dataHandler_shop_register("BLACKSMITH", "ZOD_SWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("ZOD_SWORD_1_ITEM", "DIAMOND_ITEM:100000,EMERALD_ITEM:95000,FRAIL_WOODEN_SWORD_1_ITEM:35")
+
+	game_dataHandler_shop_register("BLACKSMITH", "FANTASTIC_GREATSWORD_1_ITEM")
+	game_dataHandler_shop_purchaseCost("FANTASTIC_GREATSWORD_1_ITEM", "DIAMOND_ITEM:130000,EMERALD_ITEM:120000,FRAIL_WOODEN_SWORD_1_ITEM:50")
+
+	game_dataHandler_shop_register("BLACKSMITH", "HARDENED_BRONZE_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("HARDENED_BRONZE_CHESTPLATE_1_ITEM", "STONE_ITEM:130")
+
+	game_dataHandler_shop_register("BLACKSMITH", "HARDENED_BRONZE_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("HARDENED_BRONZE_LEGGINGS_1_ITEM", "STONE_ITEM:110")
+
+	game_dataHandler_shop_register("BLACKSMITH", "BRASH_KNIGHT_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("BRASH_KNIGHT_CHESTPLATE_1_ITEM", "IRON_ITEM:12000")
+
+	game_dataHandler_shop_register("BLACKSMITH", "BRASH_KNIGHT_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("BRASH_KNIGHT_LEGGINGS_1_ITEM", "IRON_ITEM:9000")
+
+	game_dataHandler_shop_register("BLACKSMITH", "IVORY_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("IVORY_CHESTPLATE_1_ITEM", "GOLD_ITEM:37000")
+
+	game_dataHandler_shop_register("BLACKSMITH", "IVORY_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("IVORY_LEGGINGS_1_ITEM", "GOLD_ITEM:32000")
+
+	game_dataHandler_shop_register("BLACKSMITH", "PATCHED_CHESTPLATE_1_ITEM")
+	game_dataHandler_shop_purchaseCost("PATCHED_CHESTPLATE_1_ITEM", "STONE_ITEM:1500")
+
+	game_dataHandler_shop_register("BLACKSMITH", "PATCHED_LEGGINGS_1_ITEM")
+	game_dataHandler_shop_purchaseCost("PATCHED_LEGGINGS_1_ITEM", "STONE_ITEM:1100")
+
+# SHOP - ARCHER
+
+	game_dataHandler_shop_register("ARCHER", "WOODEN_BOW_1_ITEM")
+	game_dataHandler_shop_purchaseCost("WOODEN_BOW_1_ITEM", "IRON_ITEM:3500,FEATHER_ITEM:1")
+	game_dataHandler_shop_register("ARCHER", "BRONZED_REFLEX_BOW_1_ITEM")
+	game_dataHandler_shop_purchaseCost("BRONZED_REFLEX_BOW_1_ITEM", "GOLD_ITEM:7000,FEATHER_ITEM:22")
+	game_dataHandler_shop_register("ARCHER", "MARKSMAN_BOW_1_ITEM")
+	game_dataHandler_shop_purchaseCost("MARKSMAN_BOW_1_ITEM", "DIAMOND_ITEM:15000,FEATHER_ITEM:333")
+	game_dataHandler_shop_register("ARCHER", "GILED_BOW_1_ITEM")
+	game_dataHandler_shop_purchaseCost("GILED_BOW_1_ITEM", "EMERALD_ITEM:35000,FEATHER_ITEM:4444")
+	game_dataHandler_shop_register("ARCHER", "PHANTOM_BOW_1_ITEM")
+	game_dataHandler_shop_purchaseCost("PHANTOM_BOW_1_ITEM", "REDSTONE_ITEM:85000,FEATHER_ITEM:55555")
+	game_dataHandler_shop_register("ARCHER", "GNOME_LIGHTNING_BOW_1_ITEM")
+	game_dataHandler_shop_purchaseCost("GNOME_LIGHTNING_BOW_1_ITEM", "REDSTONE_ITEM:100000,COCAINE_ITEM:750,FEATHER_ITEM:666666")
+	game_dataHandler_shop_register("ARCHER", "ARROW_ITEM:16")
+	game_dataHandler_shop_purchaseCost("ARROW_ITEM", "COAL_ITEM:160,FEATHER_ITEM:4")
+	game_dataHandler_shop_register("ARCHER", "ROYAL_ARROW_ITEM:8")
+	game_dataHandler_shop_purchaseCost("ROYAL_ARROW_ITEM", "IRON_ITEM:320,FEATHER_ITEM:8")
+	game_dataHandler_shop_register("ARCHER", "SPIKED_ARROW_ITEM:4")
+	game_dataHandler_shop_purchaseCost("SPIKED_ARROW_ITEM", "DIAMOND_ITEM:320,FEATHER_ITEM:16")
+	game_dataHandler_shop_register("ARCHER", "CHARGED_ARROW_ITEM:4")
+	game_dataHandler_shop_purchaseCost("CHARGED_ARROW_ITEM", "UNKNOWN_ITEM:1")
+
+# SHOP - DRUG
+# SHOP - DRUG
+# SHOP - DRUG
+
+	game_dataHandler_shop_register("DRUG", "COCAINE_ITEM")
+	game_dataHandler_shop_purchaseCost("COCAINE_ITEM", "TICKET_ITEM:100")
+
+#	game_dataHandler_shop_register("DRUG", "COCAINE_HELMET_1_ITEM")
+#	game_dataHandler_shop_purchaseCost("COCAINE_HELMET_1_ITEM", "COCAINE_ITEM:1200,REDSTONE_ITEM:60000")
+
+#	game_dataHandler_shop_register("DRUG", "COCAINE_LEGGINGS_1_ITEM")
+#	game_dataHandler_shop_purchaseCost("COCAINE_LEGGINGS_1_ITEM", "COCAINE_ITEM:1500,REDSTONE_ITEM:70000")
+
+function game_dataHandler_public_linkItemToID(item: item, itemID: text) :: item:
+	set {_item} to {_item} with lore "%{_item}'s lore%||&f||&7&oID: %{_itemID} in lower case%"
+	return {_item}
+
+function game_dataHandler_public_textToItems(text: text, receiver: player) :: items:
+	# ITEM:1~2 (1 to 2 items),ITEM:1 (garentee amount),ITEM:1:[10] (10% chance to get 1)
+	# BOOSTER:Ore:2:60 (Booster for "X2 Ore" and last for 60 seconds)
+	set {_itemsSplit::*} to {_text} split by ","
+	loop {_itemsSplit::*}:
+		set {_loopItemSplit::*} to {_itemsSplit::%loop-index%} split by ":"
+		if {_loopItemSplit::1} is "BOOSTER":
+			game_boosterHandler_new({_receiver}, "%{_loopItemSplit::2}%:%{_loopItemSplit::3}%", ("%{_loopItemSplit::4}% seconds" parsed as time span))
+		else if {-game_dataHandler::%{_loopItemSplit::1}%} is set:
+			if {_loopItemSplit::2} contains "~":
+				set {_amountRangeSplit::*} to {_loopItemSplit::2} split by "~"
+				set {_low} to ({_amountRangeSplit::1} parsed as number)
+				set {_high} to ({_amountRangeSplit::2} parsed as number)
+				set {_amount} to (random integer between {_low} and {_high})
+			else:
+				set {_amount} to ({_loopItemSplit::2} parsed as number)
+			if {_loopItemSplit::3} is set:
+				set {_chance} to ({_loopItemSplit::3} parsed as number)
+				set {_random} to (random number between 0 and 100)
+				if {_chance} >= {_random}:
+					set {_chanceItem} to ({_amount} of {-game_dataHandler::%{_loopItemSplit::1}%})
+					if {_chance} <= 5:
+						if {_receiver} is online:
+							send "&d%{_receiver}% has found %game_dataHandler_public_getItemDisplay({_chanceItem})%! (%{_chance}%%%)" to all players
+					add {_chanceItem} to {_returnItems::*}
+					game_questHandler_recordStat({_receiver}, "COLLECTING_%{_loopItemSplit::1}%", {_amount})
+			else:
+				add ({_amount} of {-game_dataHandler::%{_loopItemSplit::1}%}) to {_returnItems::*}
+				game_questHandler_recordStat({_receiver}, "COLLECTING_%{_loopItemSplit::1}%", {_amount})
+	return {_returnItems::*}
+
+function game_dataHandler_public_getOreTypes() :: items:
+	set {_oreTypesRaw::*} to {-game_dataHandler::ALL_ORES} split by ":"
+	loop {_oreTypesRaw::*}:
+		set {_oreTypesRaw::%loop-index%} to ({_oreTypesRaw::%loop-index%} parsed as item)
+	return {_oreTypesRaw::*}
+
+function game_dataHandler_public_getItemDisplay(item: item) :: text:
+	return "%uncolored {_item}'s name% x%{_item}'s item amount%"
+
+function game_dataHandler_public_checkInArea(location: location, restrictTypes: texts) :: boolean:
+	loop {_restrictTypes::*}:
+		set {_loopRestrictType} to {_restrictTypes::%loop-index%}
+		if {_loopRestrictType} is "ORE_MINES":
+			set {_oreTypes::*} to game_dataHandler_public_getOreTypes()
+			loop {_oreTypes::*}:
+				set {_loopOreType} to {_oreTypes::%loop-index-2%}
+				add game_dataHandler_oreArea_getPos({_loopOreType}) to {_regionPoints::*}
+		else if {_loopRestrictType} is "SPAWN":
+			add game_dataHandler_area_getPos("SPAWN") to {_regionPoints::*}
+	loop ((amount of {_regionPoints::*}) / 2) times:
+		set {_pos1Num} to ((loop-number * 2) - 1)
+		set {_pos2Num} to (loop-number * 2)
+		if game_dataHandler_public_checkInArea_checkBetweenPoints({_regionPoints::%{_pos1Num}%}, {_regionPoints::%{_pos2Num}%}, {_location}) is true:
+			return true
+	return false
+
+function game_dataHandler_public_checkInArea_checkBetweenPoints(regionLocation1: location, regionLocation2: location, checkLocation: location) :: boolean:
+	add (({_regionLocation1}'s x coords) and ({_regionLocation2}'s x coords) and ({_checkLocation}'s x coords) and ({_regionLocation1}'s y coords) and ({_regionLocation2}'s y coords) and ({_checkLocation}'s y coords) and ({_regionLocation1}'s z coords) and ({_regionLocation2}'s z coords) and ({_checkLocation}'s z coords)) to {_coords::*}
+	loop 3 times:
+		delete {_loopNums::*}
+		add (loop-number * 3 - 2) and (loop-number * 3 - 1) and (loop-number * 3) to {_loopNums::*}
+		if {_coords::%{_loopNums::1}%} > {_coords::%{_loopNums::2}%}:
+			set {_high} to {_coords::%{_loopNums::1}%}
+			set {_low} to {_coords::%{_loopNums::2}%}
+		else:
+			set {_high} to {_coords::%{_loopNums::2}%}
+			set {_low} to {_coords::%{_loopNums::1}%}
+		if {_coords::%{_loopNums::3}%} > {_high}:
+			return false
+		else if {_coords::%{_loopNums::3}%} < {_low}:
+			return false
+	return true
+
+function game_dataHandler_items_register(itemID: text, item: item):
+	set {-game_dataHandler::%{_itemID}%_ITEM} to game_dataHandler_public_linkItemToID({_item}, "%{_itemID}%_ITEM")
+
+function game_dataHandler_items_getItem(itemID: text, amount: number = 1) :: item:
+	return ({_amount} of {-game_dataHandler::%{_itemID}%_ITEM})
+
+function game_dataHandler_oreBlocks_register(oreBlock: item, oreDropItemID: text, oreDropAmount: number = 1):
+	set {_oreID} to game_dataHandler_oreBlocks_nameToID({_oreBlock})
+	set {-game_dataHandler::%{_oreID}%_DROPS} to game_dataHandler_items_getItem({_oreDropItemID}, {_oreDropAmount})
+
+function game_dataHandler_oreBlocks_checkValid(oreBlock: item) :: boolean:
+	set {_oreID} to game_dataHandler_oreBlocks_nameToID({_oreBlock})
+	return (check [{-game_dataHandler::%{_oreID}%_DROPS} is set])
+
+function game_dataHandler_oreBlocks_getData(oreBlock: item) :: objects:
+	set {_oreID} to game_dataHandler_oreBlocks_nameToID({_oreBlock})
+	add {-game_dataHandler::%{_oreID}%_DROPS} to {_data::*}
+	return {_data::*}
+
+function game_dataHandler_oreBlocks_nameToID(oreBlock: item) :: text:
+	set {_oreID} to "%{_oreBlock}%" in upper case
+	replace all " " with "_" in {_oreID}
+	return {_oreID}
+
+function game_dataHandler_oreArea_register(oreBlock: item, location1: location, location2: location):
+	set {_oreID} to game_dataHandler_oreBlocks_nameToID({_oreBlock})
+	set {-game_dataHandler::%{_oreID}%_ORE_AREA_POS_ONE} to {_location1}
+	set {-game_dataHandler::%{_oreID}%_ORE_AREA_POS_TWO} to {_location2}
+
+function game_dataHandler_oreArea_getPos(oreBlock: item) :: locations:
+	set {_oreID} to game_dataHandler_oreBlocks_nameToID({_oreBlock})
+	add {-game_dataHandler::%{_oreID}%_ORE_AREA_POS_ONE} to {_returnPos::*}
+	add {-game_dataHandler::%{_oreID}%_ORE_AREA_POS_TWO} to {_returnPos::*}
+	return {_returnPos::*}
+
+function game_dataHandler_area_register(name: text, location1: location, location2: location):
+	set {-game_dataHandler::%{_name}%_AREA_POS_ONE} to {_location1}
+	set {-game_dataHandler::%{_name}%_AREA_POS_TWO} to {_location2}
+
+function game_dataHandler_area_getPos(name: text) :: locations:
+	add {-game_dataHandler::%{_name}%_AREA_POS_ONE} to {_returnPos::*}
+	add {-game_dataHandler::%{_name}%_AREA_POS_TWO} to {_returnPos::*}
+	return {_returnPos::*}
+
+function game_dataHandler_shop_register(category: text, itemID: text):
+	set {-game_dataHandler::%{_category}%_SHOP_ITEMS} to (check [{-game_dataHandler::%{_category}%_SHOP_ITEMS} is set] ? "%{-game_dataHandler::%{_category}%_SHOP_ITEMS}%," : "")
+	set {-game_dataHandler::%{_category}%_SHOP_ITEMS} to "%{-game_dataHandler::%{_category}%_SHOP_ITEMS}%%{_itemID}%"
+
+function game_dataHandler_shop_purchaseCost(itemID: text, purchaseCost: text):
+	set {-game_dataHandler::%{_itemID}%_SHOP_COST} to {_purchaseCost}
+
+function game_dataHandler_pickaxe_register(primaryID: text, level: number, name: text, canBreak: text, efficiency: number, levelStats: text):
+	set {_pickaxeID} to "%{_primaryID}%_%{_level}%"
+	set {-game_dataHandler::%{_pickaxeID}%_ITEM} to game_dataHandler_public_linkItemToID(game_pickaxeHandler_pickaxe_getPickaxe({_name}, {_level}, {_canBreak}, {_efficiency}, {_levelStats}), "%{_pickaxeID}%_ITEM")
+
+#function game_dataHandler_pickaxe_getPickaxe(primaryID: text, level: number) :: item:
+#	set {_pickaxeID} to "%{_primaryID}%_%{_level}%"
+#	return {-game_dataHandler::%{_pickaxeID}%_ITEM}
+
+function game_dataHandler_axe_register(primaryID: text, level: number, name: text, canBreak: text, efficiency: number, levelStats: text):
+	set {_axeID} to "%{_primaryID}%_%{_level}%"
+	set {-game_dataHandler::%{_axeID}%_ITEM} to game_dataHandler_public_linkItemToID(game_axeHandler_axe_getAxe({_name}, {_level}, {_canBreak}, {_efficiency}, {_levelStats}), "%{_axeID}%_ITEM")
+
+function game_dataHandler_armor_register(primaryID: text, armorType: number, level: number, name: text, levelStats: text, colorID: number):
+	set {_armorID} to "%{_primaryID}%_%{_level}%"
+	set {-game_dataHandler::%{_armorID}%_ITEM} to game_dataHandler_public_linkItemToID(game_armorHandler_armor_getArmor({_name}, {_armorType}, {_level}, {_levelStats}, {_colorID}), "%{_armorID}%_ITEM")
+
+function game_dataHandler_weapon_register(primaryID: text, level: number, name: text, levelStats: text, weaponItem: item):
+	set {_weaponID} to "%{_primaryID}%_%{_level}%"
+	set {-game_dataHandler::%{_weaponID}%_ITEM} to game_dataHandler_public_linkItemToID(game_weaponHandler_weapon_getWeapon({_name}, {_level}, {_levelStats}, {_weaponItem}), "%{_weaponID}%_ITEM")
+
+function game_dataHandler_upgradableItems_upgradeCost(primaryID: text, level: number, itemID: text, amount: number):
+	set {_pickaxeID} to "%{_primaryID}%_%{_level}%"
+	set {-game_dataHandler::%{_pickaxeID}%_UPGRADE_COST} to game_dataHandler_items_getItem({_itemID}, {_amount})
+
+function game_dataHandler_airDrop_registerLocationAmount(amount: number):
+	set {-game_dataHandler::AIR_DROP_LOCATION_AMOUNT} to {_amount}
+
+function game_dataHandler_airDrop_registerLocation(id: number, location: location):
+	set {-game_dataHandler::AIR_DROP_LOCATION_%{_id}%} to {_location}
+
+function game_dataHandler_airDrop_registerLoot(loot: text):
+	set {-game_dataHandler::AIR_DROP_LOOT} to {_loot}
+
+function game_dataHandler_chanceReward_registerItem(type: text, id: number, chance: number, itemID: text):
+	set {-game_dataHandler::%{_type}%_%{_id}%_REWARD_CHANCE} to {_chance}
+	set {-game_dataHandler::%{_type}%_%{_id}%_REWARD_ITEM_ID} to {_itemID}
+
+function game_dataHandler_autoBroadcast_registerAmount(amount: number):
+	set {-game_dataHandler::AUTO_BROADCAST_AMOUNT} to {_amount}
+
+function game_dataHandler_autoBroadcast_registerMessage(id: number, message: text):
+	set {-game_dataHandler::AUTO_BROADCAST_MESSAGE_%{_id}%} to {_message}
+
+function game_dataHandler_quest_register(type: text, id: number, name: text, data: text, reward: text):
+	set {_questID} to "%{_type}%_%{_id}%"
+	set {-game_dataHandler::%{_questID}%_QUEST_NAME} to {_name}
+	set {-game_dataHandler::%{_questID}%_QUEST_DATA} to {_data}
+	set {-game_dataHandler::%{_questID}%_QUEST_REWARD} to {_reward}
+
+function game_dataHandler_mob_registerMob(type: text, name: text, damage: number, reach: number, maxHealth: number, protection: number, speed: number, loot: text, location: location):
+	spawn ({_type} parsed as entity type) at {_location}
+	set {_mob} to last spawned entity
+	set {_mobUUID} to ({_mob}'s UUID)
+	set {-game_dataHandler::MOB_LIST} to (check [{-game_dataHandler::MOB_LIST} is set] ? "%{-game_dataHandler::MOB_LIST}%:%{_mobUUID}%" : "%{_mobUUID}%")
+	set {-entityData::%{_mobUUID}%_ENTITY} to {_mob}
+	set {-entityData::%{_mobUUID}%_NAME} to {_name}
+	set {-entityData::%{_mobUUID}%_DAMAGE} to {_damage}
+	set {-entityData::%{_mobUUID}%_REACH} to {_reach}
+	set {-entityData::%{_mobUUID}%_HEALTH_MAX} to {_maxHealth}
+	set {-entityData::%{_mobUUID}%_PROTECTION} to {_protection}
+	set {-entityData::%{_mobUUID}%_SPEED} to {_speed}
+	set {-entityData::%{_mobUUID}%_LOOT_ITEMS} to {_loot}
+	set {-entityData::%{_mobUUID}%_SPAWN_LOCATION} to {_location}
+	set {-entityData::%{_mobUUID}%_DEATH_COUNT} to 0
+	set the name of {_mob} to {_name}
+#	set custom name visibility of {_mob} to true
+	game_healthbarHandler_new({_mob})
+	game_healthbarHandler_update({_mob})
+	add "{NoAI:1}" to entity-nbt of {_mob}
+
+function game_dataHandler_code_registerCode(code: text, reward: text, status: text):
+	set {-game_dataHandler::%{_code}%_CODE_REWARD} to {_reward}
+	set {-game_dataHandler::%{_code}%_CODE_STATUS} to {_status}
+
+function game_dataHandler_invisiblePressurePlate_register(location: location, action: text):
+	set {_locationBlock} to (block at {_location})
+	set {_locationText} to "%{_locationBlock}'s x coords%_%{_locationBlock}'s y coords%_%{_locationBlock}'s z coords%"
+	set {-game_dataHandler::PRESSURE_PLATE_LIST} to (check [{-game_dataHandler::PRESSURE_PLATE_LIST} is set] ? "%{-game_dataHandler::PRESSURE_PLATE_LIST}%:%{_locationText}%" : "%{_locationText}%")
+	set {-game_dataHandler::%{_locationText}%_PRESSURE_PLATE_LOCATION} to {_location}
+	set {-game_dataHandler::%{_locationText}%_PRESSURE_PLATE_ACTION} to {_action}
+	set block at {_location} to STONE_PRESSURE_PLATE

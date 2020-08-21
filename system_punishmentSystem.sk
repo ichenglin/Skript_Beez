@@ -1,0 +1,353 @@
+#
+# NOTE:
+#
+# This script require StringDatasAPI to function!
+# Source: https://github.com/fireclaws9/Minecraft_Skript-API/blob/master/StringDatasAPI
+#
+
+options:
+	#
+	# bypass-uuids will prevent certain players being punished.
+	#
+	bypass-uuids: "2bbd185f-8124-4339-b5ae-db9a4c614fd5" or "a8939931-74ed-40dc-b8e0-925cdd47eb17"
+	#
+	# restriction-check examples:
+	#
+	# executor is a op
+	# executor have permission "my.permission"
+	#
+	tempban-restriction-check: executor have permission "server.helper"
+	ban-restriction-check: executor have permission "server.admin"
+	mute-restriction-check: executor have permission "server.helper"
+	kick-restriction-check: executor have permission "server.helper"
+	unban-restriction-check: executor have permission "server.mod"
+	unmute-restriction-check: executor have permission "server.mod"
+	history-restriction-check: executor have permission "server.helper"
+	punishment-log-permission-check: loop-player have permission "server.helper"
+	kick-message: %nl%▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄%nl%&eYou are %{_action}% this server!%nl%%nl%&eReason: &f%{_reason}%%nl%&eExpire In: &f%{_expire}%%nl%▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+	warn-message: %nl%▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄%nl%&eYou have been warned!%nl% %nl%&eReason: &f%{_reason}%%nl%▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+
+command /tempban [<offline player>] [<text>] [<text>]:
+	trigger:
+		if executor is not console:
+			if !check [{@tempban-restriction-check}]:
+				send "&cYou are not allowed to use this command!" to executor
+				stop
+		if arg 1 or arg 2 or arg 3 is not set:
+			send "&cUsage: /tempban <player> <time> <reason>" to executor
+			stop
+		if (arg 1's UUID) is {@bypass-uuids}:
+			send "&cYou are not allowed to ban this player!" to executor
+			stop
+		set {_operator} to (check [executor is console] ? "CONSOLE" : executor)
+		set {_punishmentLength} to system_punishmentSystem_textToSeconds(arg 2)
+		if {_punishmentLength} is not set:
+			send "&cUsage: /tempban <player> <time> <reason>" to executor
+			stop
+		send "&eYou have temporary banned &6%arg 1% &efor &6%system_punishmentSystem_secondsToTime({_punishmentLength})% &ewith reason &6%arg 3%&e!" to executor
+		system_punishmentSystem_sendPunishmentLog(executor, "&6%{_operator}% &etemporary banned &6%arg 1% &efor &6%system_punishmentSystem_secondsToTime({_punishmentLength})% &ewith reason &6%arg 3%&e!")
+		if system_punishmentSystem_checkPunished((arg 1), "BAN") is true:
+			send "&cThe player is already banned, new punishment will replace previous punishments!" to executor
+		system_punishmentSystem_registerPunishment((arg 1), {_operator}, "BAN", "%{_punishmentLength}%", (arg 3))
+
+command /ban [<offline player>] [<text>]:
+	trigger:
+		if executor is not console:
+			if !check [{@ban-restriction-check}]:
+				send "&cYou are not allowed to use this command!" to executor
+				stop
+		if arg 1 or arg 2 is not set:
+			send "&cUsage: /ban <player> <reason>" to executor
+			stop
+		if (arg 1's UUID) is {@bypass-uuids}:
+			send "&cYou are not allowed to ban this player!" to executor
+			stop
+		set {_operator} to (check [executor is console] ? "CONSOLE" : executor)
+		send "&eYou have permanently banned &6%arg 1% &ewith reason &6%arg 2%&e!" to executor
+		system_punishmentSystem_sendPunishmentLog(executor, "&6%{_operator}% &epermanently banned &6%arg 1% &ewith reason &6%arg 2%&e!")
+		if system_punishmentSystem_checkPunished((arg 1), "BAN") is true:
+			send "&cThe player is already banned, new punishment will replace previous punishments!" to executor
+		system_punishmentSystem_registerPunishment((arg 1), {_operator}, "BAN", "PERMANENT", (arg 2))
+
+command /mute [<offline player>] [<text>] [<text>]:
+	trigger:
+		if executor is not console:
+			if !check [{@mute-restriction-check}]:
+				send "&cYou are not allowed to use this command!" to executor
+				stop
+		if arg 1 or arg 2 or arg 3 is not set:
+			send "&cUsage: /mute <player> <time> <reason>" to executor
+			stop
+		if (arg 1's UUID) is {@bypass-uuids}:
+			send "&cYou are not allowed to mute this player!" to executor
+			stop
+		set {_operator} to (check [executor is console] ? "CONSOLE" : executor)
+		set {_punishmentLength} to system_punishmentSystem_textToSeconds(arg 2)
+		if {_punishmentLength} is not set:
+			send "&cUsage: /mute <player> <time> <reason>" to executor
+			stop
+		send "&eYou have temporary muted &6%arg 1% &efor &6%system_punishmentSystem_secondsToTime({_punishmentLength})% &ewith reason &6%arg 3%&e!" to executor
+		system_punishmentSystem_sendPunishmentLog(executor, "&6%{_operator}% &etemporary muted &6%arg 1% &efor &6%system_punishmentSystem_secondsToTime({_punishmentLength})% &ewith reason &6%arg 3%&e!")
+		if system_punishmentSystem_checkPunished((arg 1), "MUTE") is true:
+			send "&cThe player is already muted, new punishment will replace previous punishments!" to executor
+		system_punishmentSystem_registerPunishment((arg 1), {_operator}, "MUTE", "%{_punishmentLength}%", (arg 3))
+
+command /kick [<offline player>] [<text>]:
+	trigger:
+		if executor is not console:
+			if !check [{@kick-restriction-check}]:
+				send "&cYou are not allowed to use this command!" to executor
+				stop
+		if arg 1 or arg 2 is not set:
+			send "&cUsage: /kick <player> <reason>" to executor
+			stop
+		if (arg 1's UUID) is {@bypass-uuids}:
+			send "&cYou are not allowed to kick this player!" to executor
+			stop
+		set {_operator} to (check [executor is console] ? "CONSOLE" : executor)
+		send "&eYou have kicked &6%arg 1% &ewith reason &6%arg 2%&e!" to executor
+		system_punishmentSystem_sendPunishmentLog(executor, "&6%{_operator}% &ekicked &6%arg 1% &ewith reason &6%arg 2%&e!")
+		system_punishmentSystem_registerPunishment((arg 1), {_operator}, "KICK", "NULL", (arg 2))
+
+command /warn [<offline player>] [<text>]:
+	trigger:
+		if executor is not console:
+			if !check [{@kick-restriction-check}]:
+				send "&cYou are not allowed to use this command!" to executor
+				stop
+		if arg 1 or arg 2 is not set:
+			send "&cUsage: /warn <player> <reason>" to executor
+			stop
+		if (arg 1's UUID) is {@bypass-uuids}:
+			send "&cYou are not allowed to warn this player!" to executor
+			stop
+		set {_operator} to (check [executor is console] ? "CONSOLE" : executor)
+		send "&eYou have warned &6%arg 1% &ewith reason &6%arg 2%&e!" to executor
+		system_punishmentSystem_sendPunishmentLog(executor, "&6%{_operator}% &ewarned &6%arg 1% &ewith reason &6%arg 2%&e!")
+		system_punishmentSystem_registerPunishment((arg 1), {_operator}, "WARN", "NULL", (arg 2))
+
+command /unban [<offline player>] [<text>]:
+	trigger:
+		# arg 2 is added to prevent player using more arguments and skript show error, DO NOT remove it.
+		if executor is not console:
+			if !check [{@unban-restriction-check}]:
+				send "&cYou are not allowed to use this command!" to executor
+				stop
+		if arg 1 is not set:
+			send "&cUsage: /unban <player>" to executor
+			stop
+		if system_punishmentSystem_checkPunished((arg 1), "BAN") is false:
+			send "&cThe player is not banned!" to executor
+			stop
+		set {_operator} to (check [executor is console] ? "CONSOLE" : executor)
+		send "&eYou have unbanned &6%arg 1%&e!" to executor
+		system_punishmentSystem_sendPunishmentLog(executor, "&6%{_operator}% &eunbanned &6%arg 1%&e!")
+		system_punishmentSystem_revokePunishment((arg 1), "BAN")
+
+command /unmute [<offline player>] [<text>]:
+	trigger:
+		# arg 2 is added to prevent player using more arguments and skript show error, DO NOT remove it.
+		if executor is not console:
+			if !check [{@unmute-restriction-check}]:
+				send "&cYou are not allowed to use this command!" to executor
+				stop
+		if arg 1 is not set:
+			send "&cUsage: /unmute <player>" to executor
+			stop
+		if system_punishmentSystem_checkPunished((arg 1), "MUTE") is false:
+			send "&cThe player is not muted!" to executor
+			stop
+		set {_operator} to (check [executor is console] ? "CONSOLE" : executor)
+		send "&eYou have unmuted &6%arg 1%&e!" to executor
+		system_punishmentSystem_sendPunishmentLog(executor, "&6%{_operator}% &eunmuted &6%arg 1%&e!")
+		system_punishmentSystem_revokePunishment((arg 1), "MUTE")
+
+command /history [<offline player>] [<text>]:
+	trigger:
+		# arg 2 is added to prevent player using more arguments and skript show error, DO NOT remove it.
+		if executor is not console:
+			if !check [{@history-restriction-check}]:
+				send "&cYou are not allowed to use this command!" to executor
+				stop
+		if arg 1 is not set:
+			send "&cUsage: /history <player>" to executor
+			stop
+		system_punishmentSystem_removePlayerExpiredPunishments(arg 1)
+		set {_targetPlayerUUID} to (arg 1's UUID)
+		set {_playerPunishmentsRaw} to stringDatasAPI_getData({system_punishmentSystem::%{_targetPlayerUUID}%_PLAYER_DATA}, "PUNISHMENTS")
+		set {_playerPunishmentID::*} to {_playerPunishmentsRaw} split by ":"
+		if {_playerPunishmentID::*} is not set:
+			send "&cNo history found for %arg 1%!" to executor
+			stop
+		add "&c[History of &e%arg 1%&c]" to {_playerHistoryRaw::*}
+		loop (amount of {_playerPunishmentID::*}) times:
+			set {_loopID} to {_playerPunishmentID::%loop-number%}
+			set {_punishmentLengthRaw} to stringDatasAPI_getData({system_punishmentSystem::%{_loopID}%_PUNISHMENT_DATA}, "LENGTH")
+			if {_punishmentLengthRaw} is "PERMANENT":
+				set {_punishmentLengthDisplay} to " &c(&ePermanent&c)"
+			else if {_punishmentLengthRaw} is "NULL":
+				set {_punishmentLengthDisplay} to ""
+			else:
+				set {_punishmentLengthDisplay} to " &c(&e%system_punishmentSystem_secondsToTime({_punishmentLengthRaw} parsed as number)%&c)"
+			set {_operatorUUID} to stringDatasAPI_getData({system_punishmentSystem::%{_loopID}%_PUNISHMENT_DATA}, "OPERATOR")
+			set {_operator} to ("%{_operatorUUID}%" parsed as offline player)
+			set {_type} to stringDatasAPI_getData({system_punishmentSystem::%{_loopID}%_PUNISHMENT_DATA}, "TYPE")
+			set {_status} to stringDatasAPI_getData({system_punishmentSystem::%{_loopID}%_PUNISHMENT_DATA}, "STATUS")
+			if {_type} is "KICK" or "WARN":
+				set {_statusDisplay} to ""
+			else if {_status} is "ACTIVE":
+				set {_statusDisplay} to " &a[Active]"
+			else if {_status} is "REVOKED":
+				set {_statusDisplay} to " &6[Revoked]"
+			else:
+				set {_statusDisplay} to " &7[Expired]"
+			add "&c[&e%{system_punishmentSystem::%{_loopID}%_PUNISHMENT_TIME}%&c] &e%{_type}% - &7##%{_loopID}%%{_punishmentLengthDisplay}%%nl%&cOperator: &e%{_operator}%&c Reason: &e%stringDatasAPI_getData({system_punishmentSystem::%{_loopID}%_PUNISHMENT_DATA}, ""REASON"")%%{_statusDisplay}%" to {_playerHistoryRaw::*}
+		set {_playerHistoryDisplay} to join {_playerHistoryRaw::*} with delimiter "%nl% %nl%"
+		send {_playerHistoryDisplay} to executor
+
+on connect:
+	set {_playerUUID} to (player's UUID)
+	system_punishmentSystem_removePlayerExpiredPunishments(player)
+	if system_punishmentSystem_checkPunished(player, "BAN") is true:
+		set {_activeBanID} to stringDatasAPI_getData({system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA}, "ACTIVE_BAN")
+		kick the player because system_punishmentSystem_getKickMessage({_activeBanID})
+
+on chat:
+	set {_playerUUID} to (player's UUID)
+	system_punishmentSystem_removePlayerExpiredPunishments(player)
+	if system_punishmentSystem_checkPunished(player, "MUTE") is true:
+		set {_activeMuteID} to stringDatasAPI_getData({system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA}, "ACTIVE_MUTE")
+		set {_reason} to stringDatasAPI_getData({system_punishmentSystem::%{_activeMuteID}%_PUNISHMENT_DATA}, "REASON")
+		set {_lengthRaw} to stringDatasAPI_getData({system_punishmentSystem::%{_activeMuteID}%_PUNISHMENT_DATA}, "LENGTH")
+		set {_punishmentDate} to {system_punishmentSystem::%{_activeMuteID}%_PUNISHMENT_TIME}
+		add ("%{_lengthRaw}% seconds" parsed as time span) to {_punishmentDate}
+		set {_expire} to (difference between {_punishmentDate} and now)
+		send "&eYou are muted on this server for &6%{_reason}%&e, the mute expires in &6%{_expire}%&e!" to player
+		cancel event
+
+function system_punishmentSystem_registerPunishment(player: offline player, operator: object, type: text, length: text, reason: text):
+	set {_playerUUID} to ({_player}'s UUID)
+	set {_operatorUUID} to (check [{_operator} is a player] ? ({_operator}'s UUID) : "%{_operator}%")
+	set {_punishmentID} to system_punishmentSystem_getNewID()
+	if stringDatasAPI_isSet({system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA}, "ACTIVE_%{_type} in upper case%") is true:
+		system_punishmentSystem_revokePunishment({_player}, {_type})
+	if {_type} is "BAN" or "MUTE":
+		set {system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA} to stringDatasAPI_setData("ACTIVE_%{_type} in upper case%", "%{_punishmentID}%", {system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA})
+	if stringDatasAPI_isSet({system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA}, "PUNISHMENTS") is true:
+		set {_previousPlayerPunishments} to stringDatasAPI_getData({system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA}, "PUNISHMENTS")
+		set {system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA} to stringDatasAPI_setData("PUNISHMENTS", "%{_previousPlayerPunishments}%:%{_punishmentID}%", {system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA})
+	else:
+		set {system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA} to stringDatasAPI_setData("PUNISHMENTS", "%{_punishmentID}%", {system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA})
+	add "TYPE" and ({_type} in upper case) and "LENGTH" and ({_length} in upper case) and "STATUS" and "ACTIVE" and "REASON" and {_reason} and "PLAYER" and {_playerUUID} and "OPERATOR" and {_operatorUUID} to {_punishmentDataRaw::*}
+	loop ((amount of {_punishmentDataRaw::*}) / 2) times:
+		set {_dataNameNumber} to ((loop-number * 2) - 1)
+		set {_dataValueNumber} to (loop-number * 2)
+		set {system_punishmentSystem::%{_punishmentID}%_PUNISHMENT_DATA} to stringDatasAPI_setData({_punishmentDataRaw::%{_dataNameNumber}%}, {_punishmentDataRaw::%{_dataValueNumber}%}, {system_punishmentSystem::%{_punishmentID}%_PUNISHMENT_DATA})
+	set {system_punishmentSystem::%{_punishmentID}%_PUNISHMENT_TIME} to now
+	if {_type} is "BAN" or "KICK":
+		kick {_player} because system_punishmentSystem_getKickMessage("%{_punishmentID}%")
+	else if {_type} is "WARN":
+		send system_punishmentSystem_getWarnMessage("%{_punishmentID}%") to {_player}
+
+function system_punishmentSystem_revokePunishment(player: offline player, type: text):
+	set {_playerUUID} to ({_player}'s UUID)
+	set {_playerActivePunishmentID} to stringDatasAPI_getData({system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA}, "ACTIVE_%{_type}%")
+	set {system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA} to stringDatasAPI_removeData({system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA}, "ACTIVE_%{_type}%")
+	set {system_punishmentSystem::%{_playerActivePunishmentID}%_PUNISHMENT_DATA} to stringDatasAPI_setData("STATUS", "REVOKED", {system_punishmentSystem::%{_playerActivePunishmentID}%_PUNISHMENT_DATA})
+
+function system_punishmentSystem_removePlayerExpiredPunishments(player: offline player):
+	set {_playerUUID} to ({_player}'s UUID)
+	add "ACTIVE_BAN" and "ACTIVE_MUTE" to {_activePunishmentTypes::*}
+	loop {_activePunishmentTypes::*}:
+		set {_loopPunishmentType} to {_activePunishmentTypes::%loop-index%}
+		set {_loopPunishmentID} to stringDatasAPI_getData({system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA}, {_loopPunishmentType})
+		if system_punishmentSystem_checkExpired({_loopPunishmentID}) is true:
+			set {system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA} to stringDatasAPI_removeData({system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA}, {_loopPunishmentType})
+			set {system_punishmentSystem::%{_loopPunishmentID}%_PUNISHMENT_DATA} to stringDatasAPI_setData("STATUS", "EXPIRED", {system_punishmentSystem::%{_loopPunishmentID}%_PUNISHMENT_DATA})
+		delete {_loopPunishmentID}
+
+function system_punishmentSystem_checkPunished(player: offline player, type: text) :: boolean:
+	set {_playerUUID} to ({_player}'s UUID)
+	system_punishmentSystem_removePlayerExpiredPunishments({_player})
+	return stringDatasAPI_isSet({system_punishmentSystem::%{_playerUUID}%_PLAYER_DATA}, "ACTIVE_%{_type}%")
+
+function system_punishmentSystem_checkExpired(punishmentID: text) :: boolean:
+	set {_punishmentDate} to {system_punishmentSystem::%{_punishmentID}%_PUNISHMENT_TIME}
+	set {_punishmentLengthRaw} to (stringDatasAPI_getData({system_punishmentSystem::%{_punishmentID}%_PUNISHMENT_DATA}, "LENGTH") parsed as number)
+	if {_punishmentLengthRaw} is "PERMANENT" or "NULL":
+		return false
+	set {_punishmentLength} to ("%{_punishmentLengthRaw}% seconds" parsed as time span)
+	set {_timePassed} to (difference between {_punishmentDate} and now)
+	return (check [{_timePassed} > {_punishmentLength}])
+
+function system_punishmentSystem_getNewID() :: number:
+	while (true):
+		set {_id} to (random integer between 10000000 and 99999999)
+		if {system_punishmentSystem::%{_id}%_PUNISHMENT_DATA} is not set:
+			exit 1 loop
+	return {_id}
+
+function system_punishmentSystem_textToSeconds(text: text) :: number:
+	set {_textSplit::*} to {_text} split by ""
+	set {_splitAmount} to ((amount of {_textSplit::*}) - 1)
+	set {_timeUnit} to {_textSplit::%{_splitAmount}%}
+	delete {_textSplit::%{_splitAmount}%}
+	set {_timeAmount} to join {_textSplit::*} with delimiter ""
+	set {_timeAmount} to ({_timeAmount} parsed as number)
+	if {_timeAmount} is not a number:
+		stop
+	set {_secondsPerUnit::S} to 1
+	set {_secondsPerUnit::M} to 60
+	set {_secondsPerUnit::H} to 3600
+	set {_secondsPerUnit::D} to 86400
+	set {_secondsPerUnit::W} to 604800
+	if {_secondsPerUnit::%{_timeUnit}%} is not set:
+		stop
+	return ({_timeAmount} * {_secondsPerUnit::%{_timeUnit}%})
+
+function system_punishmentSystem_secondsToTime(seconds: number) :: text:
+	add "S" and "M" and "H" and "D" and "W" to {_units::*}
+	add "seconds" and "minutes" and "hours" and "days" and "weeks" to {_unitNames::*}
+	set {_secondsPerUnit::S} to 1
+	set {_secondsPerUnit::M} to 60
+	set {_secondsPerUnit::H} to 3600
+	set {_secondsPerUnit::D} to 86400
+	set {_secondsPerUnit::W} to 604800
+	loop 6 times:
+		set {_displayUnitNumber} to (loop-number - 1)
+		if {_seconds} < {_secondsPerUnit::%{_units::%loop-number%}%}:
+			exit 1 loop
+	set {_displayUnitNumber} to (check [{_displayUnitNumber} > 0] ? {_displayUnitNumber} : 1)
+	return "%({_seconds} / {_secondsPerUnit::%{_units::%{_displayUnitNumber}%}%})% %{_unitNames::%{_displayUnitNumber}%}%"
+
+function system_punishmentSystem_getKickMessage(punishmentID: text) :: text:
+	set {_punishmentTypeRaw} to stringDatasAPI_getData({system_punishmentSystem::%{_punishmentID}%_PUNISHMENT_DATA}, "TYPE")
+	if {_punishmentTypeRaw} is "BAN":
+		set {_action} to "banned on"
+	else if {_punishmentTypeRaw} is "KICK":
+		set {_action} to "kicked from"
+	set {_punishmentLengthRaw} to stringDatasAPI_getData({system_punishmentSystem::%{_punishmentID}%_PUNISHMENT_DATA}, "LENGTH")
+	if {_punishmentLengthRaw} is "PERMANENT":
+		set {_action} to "permanently %{_action}%"
+		set {_expire} to "Never"
+	else:
+		set {_punishmentLength} to ("%{_punishmentLengthRaw}% seconds" parsed as time span)
+		set {_punishmentDate} to {system_punishmentSystem::%{_punishmentID}%_PUNISHMENT_TIME}
+		add {_punishmentLength} to {_punishmentDate}
+		set {_expire} to (difference between {_punishmentDate} and now)
+	set {_reason} to stringDatasAPI_getData({system_punishmentSystem::%{_punishmentID}%_PUNISHMENT_DATA}, "REASON")
+	return "{@kick-message}"
+
+function system_punishmentSystem_getWarnMessage(punishmentID: text) :: text:
+	set {_reason} to stringDatasAPI_getData({system_punishmentSystem::%{_punishmentID}%_PUNISHMENT_DATA}, "REASON")
+	return "{@warn-message}"
+
+function system_punishmentSystem_sendPunishmentLog(bypass: player, message: text):
+	loop all players:
+		set {_sendMessage} to true
+		if loop-player is {_bypass}:
+			set {_sendMessage} to false
+		else if !check [{@punishment-log-permission-check}]:
+			set {_sendMessage} to false
+		if {_sendMessage} is true:
+			send {_message} to loop-player

@@ -1,0 +1,46 @@
+function game_bankHandler_gui(player: player, category: text):
+	open chest with 6 row named "&cBank" to {_player}
+	loop 2 times:
+		loop 9 times:
+			format a gui slot ((((loop-number-1) - 1) * 45) + (loop-number-2) - 1) of {_player} with white glass named "&f" to do nothing
+	loop 2 times:
+		loop 4 times:
+			format a gui slot (9 + (((loop-number-1) - 1) * 8) + (((loop-number-2) - 1) * 9)) of {_player} with white glass named "&f" to do nothing
+	if {_category} is "LIST_CATEGORIES":
+		format a gui slot 22 of {_player} with book named "&aBank" with lore "&7&oBank is a place where you turn||&7&oin your loots to be &e&oused in shop||&7&oor just to &e&okeep them safe&7&o. You||&7&owon't lost items stored in bank||&7&oafter death." to do nothing
+		format a gui slot 29 of {_player} with emerald named "&aDeposit" with lore "&f||&eClick to Deposit||&f||&7&oDeposit your items||&7&ointo bank." to close then run function game_bankHandler_depositItems({_player})
+		format a gui slot 33 of {_player} with chest named "&aList Items" with lore "&f||&eClick to View||&f||&7&oList of items you||&7&ostored in bank." to close then run function game_bankHandler_gui({_player}, "LIST_ITEMS")	
+		stop
+	else if {_category} is "LIST_ITEMS":
+		format a gui slot 49 of {_player} with barrier named "&cReturn to Previous Page" with lore "&7&oClick to return to||&7&oprevious page." to close then run function game_bankHandler_gui({_player}, "LIST_CATEGORIES")
+		set {_storedItems::*} to stringDatasAPI_getDataNames({playerData::%{_player}%_BANK_ITEMS})
+		set {_guiSlots::*} to game_shopHandler_itemShop_getGuiItemSlot()
+		loop (amount of {_storedItems::*}) times:
+			set {_loopItemID} to {_storedItems::%loop-number%}
+			set {_playerOwnAmount} to (stringDatasAPI_getData({playerData::%{_player}%_BANK_ITEMS}, {_loopItemID}) parsed as number)
+			set {_displayItem} to {-game_dataHandler::%{_loopItemID}%}
+			set {_displayItem} to {_displayItem} named "&a%game_dataHandler_public_getItemDisplay(({_playerOwnAmount} of {_displayItem}))%"
+			format a gui slot {_guiSlots::%loop-number%} of {_player} with {_displayItem} to do nothing
+
+function game_bankHandler_depositItems(player: player):
+	set {_itemsDeposit} to 0
+	loop 36 times:
+		set {_loopSlot} to (loop-number - 1)
+		set {_loopInventorySlot} to (slot {_loopSlot} of {_player}'s inventory)
+		set {_allowDeposit} to true
+		if {_loopInventorySlot} is air:
+			set {_allowDeposit} to false
+		else if game_itemDataHandler_itemType_getType({_loopInventorySlot}) is not "MATERIAL":
+			set {_allowDeposit} to false
+		if {_allowDeposit} is true:
+			set {_loopItemData::*} to game_itemDataHandler_itemData_getDatas({_loopInventorySlot}, "ID")
+			set {_amountInInventory} to (amount of {_loopInventorySlot} in {_player}'s inventory)
+			remove ({_amountInInventory} of {_loopInventorySlot}) from {_player}'s inventory
+			if stringDatasAPI_isSet({playerData::%{_player}%_BANK_ITEMS}, {_loopItemData::1}) is true:
+				set {_amountInBank} to (stringDatasAPI_getData({playerData::%{_player}%_BANK_ITEMS}, {_loopItemData::1}) parsed as number)
+			else:
+				set {_amountInBank} to 0
+			set {playerData::%{_player}%_BANK_ITEMS} to stringDatasAPI_setData({_loopItemData::1}, "%({_amountInInventory} + {_amountInBank})%", {playerData::%{_player}%_BANK_ITEMS})
+			add {_amountInInventory} to {_itemsDeposit}
+	send "&eYou have deposit &6%{_itemsDeposit}% &eitems into bank!" to {_player}
+	game_logHandler_sendLog("%{_player}% deposited %{_itemsDeposit}% items, new bank data: %{playerData::%{_player}%_BANK_ITEMS}%")

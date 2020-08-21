@@ -1,0 +1,9 @@
+function game_indicatorHandler_add(message: text, location: location) :: object:
+	spawn area effect cloud at (location 300 meters above {_location})
+	set {_indicator} to last spawned entity
+	add "{Radius:0.0f,CustomName:""%{_message}%"",CustomNameVisible:1b,Duration:99999,Particle:take}" to {_indicator}'s nbt
+	teleport {_indicator} to {_location}
+	return {_indicator}
+
+function game_indicatorHandler_edit(indicator: object, message: text):
+	add "{Radius:0.0f,CustomName:""%{_message}%"",CustomNameVisible:1b,Duration:99999,Particle:take}" to {_indicator}'s nbt

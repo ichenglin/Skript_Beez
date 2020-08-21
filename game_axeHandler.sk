@@ -1,0 +1,5 @@
+function game_axeHandler_axe_getAxe(name: text, level: number, canBreak: text, efficiency: number, levelStats: text) :: item:
+	set {_axe} to (unbreakable iron axe of unbreaking 1 with hidden enchants named {_name} with lore "&7&oAxe||&f||&eLevel: &f%{_level}%||&f||&eCan Break: &f%{_canBreak}%||&eMining Speed: &f%({_efficiency} + 1)%||%{_levelStats}%" without any NBT)
+	enchant {_axe} with ("efficiency %{_efficiency}%" parsed as enchantment type)
+	add "{HideFlags:127}" to entity-nbt of {_axe}
+	return {_axe}

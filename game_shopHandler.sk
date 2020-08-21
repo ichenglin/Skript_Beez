@@ -1,0 +1,137 @@
+function game_shopHandler_itemShop_gui(player: player, category: text):
+	open chest with 6 row named "&cItem Shop" to {_player}
+	loop 2 times:
+		loop 9 times:
+			format a gui slot ((((loop-number-1) - 1) * 45) + (loop-number-2) - 1) of {_player} with white glass named "&f" to do nothing
+	loop 2 times:
+		loop 4 times:
+			format a gui slot (9 + (((loop-number-1) - 1) * 8) + (((loop-number-2) - 1) * 9)) of {_player} with white glass named "&f" to do nothing
+	if {_category} is "LIST_CATEGORIES":
+		format a gui slot 20 of {_player} with iron pickaxe named "&aPickaxe" with lore "&f||&eLeft-Click to Select||&f||&7&oBuy pickaxes that allow||&7&oyou to mine new type||&7&oof ore!" to close then run function game_shopHandler_itemShop_gui({_player}, "PICKAXE")
+		format a gui slot 22 of {_player} with iron sword named "&aWeapon" with lore "&f||&eLeft-Click to Select||&f||&7&oNo description set." to close then run function game_shopHandler_itemShop_gui({_player}, "WEAPON")
+		format a gui slot 24 of {_player} with iron chestplate named "&aArmor" with lore "&f||&eLeft-Click to Select||&f||&7&oNo description set." to close then run function game_shopHandler_itemShop_gui({_player}, "ARMOR")
+		format a gui slot 40 of {_player} with blaze powder named "&aSpecial" with lore "&f||&eLeft-Click to Select||&f||&7&oNo description set." to close then run function game_shopHandler_itemShop_gui({_player}, "SPECIAL")
+		stop
+	if {_category} is "PICKAXE" or "WEAPON" or "ARMOR" or "SPECIAL":
+		format a gui slot 49 of {_player} with barrier named "&cReturn to Previous Page" with lore "&7&oClick to return to||&7&oshop categories." to close then run function game_shopHandler_itemShop_gui({_player}, "LIST_CATEGORIES")
+	set {_categoryItemID::*} to game_shopHandler_itemShop_getSellingItemID({_category})
+	set {_itemSlots::*} to game_shopHandler_itemShop_getGuiItemSlot()
+	loop (amount of {_categoryItemID::*}) times:
+		set {_loopItemIDSplit::*} to {_categoryItemID::%loop-number%} split by ":"
+		if {_loopItemIDSplit::2} is set:
+			set {_amount} to ({_loopItemIDSplit::2} parsed as number)
+		else:
+			set {_amount} to 1
+		set {_shopItemDisplay} to ({_amount} of {-game_dataHandler::%{_loopItemIDSplit::1}%})
+		set {_shopItemCostRaw::*} to game_shopHandler_itemShop_getItemCost({_loopItemIDSplit::1})
+		loop {_shopItemCostRaw::*}:
+			set {_loopShopItemCost} to {_shopItemCostRaw::%loop-index%}
+			set {_shopItemCostLore} to (check [{_shopItemCostLore} is set] ? "%{_shopItemCostLore}%||" : "")
+			set {_shopItemCostLore} to "%{_shopItemCostLore}%&c%game_dataHandler_public_getItemDisplay({_loopShopItemCost})%"
+		set {_shopItemDisplay} to {_shopItemDisplay} with lore "&f||&c&lPurchase Cost:||%{_shopItemCostLore}%||&f||%{_shopItemDisplay}'s lore%"
+		format a gui slot {_itemSlots::%loop-number%} of {_player} with {_shopItemDisplay} to run function game_shopHandler_itemShop_purchaseItem({_player}, {_loopItemIDSplit::1}, {_amount})
+		delete {_shopItemCostLore}
+
+function game_shopHandler_itemShop_purchaseItem(player: player, itemID: text, amount: number):
+	set {_shopItemCost::*} to game_shopHandler_itemShop_getItemCost({_itemID})
+	set {_purchaseCostCheck} to game_shopHandler_itemShop_purchaseCostCheck({_player}, {_shopItemCost::*})
+	if {_purchaseCostCheck} is "NOT_ENOUGH_ITEMS":
+		close {_player}'s inventory
+		send "&cYou don't have the required items to purchase this item!" to {_player}
+		stop
+	set {_purchaseItem} to ({_amount} of {-game_dataHandler::%{_itemID}%})
+	give {_purchaseItem} to {_player}
+	set {_purchaseItemDisplay} to game_dataHandler_public_getItemDisplay({_purchaseItem})
+	send "&eYou have successfully bought &6%{_purchaseItemDisplay}% &efrom shop!" to {_player}
+	game_logHandler_sendLog("%{_player}% bought %{_purchaseItemDisplay}% from shop.")
+	game_questHandler_recordStat({_player}, "BUYING_%{_itemID}%", {_amount})
+
+function game_shopHandler_itemShop_purchaseItem_getPlayerTotalItemAmount(player: player, item: item) :: numbers:
+	set {_itemData::*} to game_itemDataHandler_itemData_getDatas({_item}, "ID")
+	set {_inventoryAmount} to (amount of {_item} in {_player}'s inventory)
+	set {_bankAmount} to (check [stringDatasAPI_isSet({playerData::%{_player}%_BANK_ITEMS}, {_itemData::1}) is true] ? (stringDatasAPI_getData({playerData::%{_player}%_BANK_ITEMS}, {_itemData::1}) parsed as number) : 0)
+	return ({_inventoryAmount} and {_bankAmount})
+
+function game_shopHandler_itemShop_purchaseCostCheck(player: player, shopItemCost: items) :: text:
+	loop {_shopItemCost::*}:
+		set {_loopCost} to {_shopItemCost::%loop-index%}
+		set {_playerItemAmount::*} to game_shopHandler_itemShop_purchaseItem_getPlayerTotalItemAmount({_player}, {_loopCost})
+		if ({_playerItemAmount::1} + {_playerItemAmount::2}) < ({_loopCost}'s item amount):
+			return "NOT_ENOUGH_ITEMS"
+	loop {_shopItemCost::*}:
+		set {_loopItem} to {_shopItemCost::%loop-index%}
+		set {_loopItemAmount} to ({_loopItem}'s item amount)
+		set {_playerItemAmount::*} to game_shopHandler_itemShop_purchaseItem_getPlayerTotalItemAmount({_player}, {_loopItem})
+		loop 2 times:
+			if loop-number is 1:
+				set {_playerItemAmount::1} to (check [{_playerItemAmount::1} > {_loopItemAmount}] ? {_loopItemAmount} : {_playerItemAmount::1})
+				remove ({_playerItemAmount::1} of {_loopItem}) from {_player}'s inventory
+			else if loop-number is 2:
+				set {_remainAmount} to ({_loopItemAmount} - {_playerItemAmount::1})
+				if {_remainAmount} > 0:
+					set {_itemData::*} to game_itemDataHandler_itemData_getDatas({_loopItem}, "ID")
+					set {_bankRemain} to ({_playerItemAmount::2} - {_remainAmount})
+					if {_bankRemain} > 0:
+						set {playerData::%{_player}%_BANK_ITEMS} to stringDatasAPI_setData({_itemData::1}, "%{_bankRemain}%", {playerData::%{_player}%_BANK_ITEMS})
+					else:
+						set {playerData::%{_player}%_BANK_ITEMS} to stringDatasAPI_removeData({playerData::%{_player}%_BANK_ITEMS}, {_itemData::1})
+		if {_playerItemAmount::1} > 0:
+			send "&c-%game_dataHandler_public_getItemDisplay(({_playerItemAmount::1} of {_loopItem}))% (Inventory)" to {_player}
+		if {_remainAmount} > 0:
+			send "&c-%game_dataHandler_public_getItemDisplay(({_remainAmount} of {_loopItem}))% (Bank)" to {_player}
+	game_playerDisplayHandler_sidebar_updatePlayerSidebar({_player})
+	return "SUCCESS"
+
+function game_shopHandler_itemShop_getSellingItemID(category: text) :: texts:
+	set {_sellingItemID::*} to {-game_dataHandler::%{_category}%_SHOP_ITEMS} split by ","
+	return {_sellingItemID::*}
+
+function game_shopHandler_itemShop_getGuiItemSlot() :: numbers:
+	loop 7 times:
+		loop 4 times:
+			add (9 + (loop-number-1) + (((loop-number-2) - 1) * 9)) to {_slots::*}
+	return {_slots::*}
+
+function game_shopHandler_itemShop_getItemCost(itemID: text) :: objects:
+	return game_dataHandler_public_textToItems({-game_dataHandler::%{_itemID}%_SHOP_COST}, {_null})
+
+function game_shopHandler_itemUpgrade_gui(player: player, item: item, itemSlot: number):
+	set {_itemData::*} to game_itemDataHandler_itemData_getDatas({_item}, ("ID" and "LEVEL"))
+	set {_nextItemLevel} to (({_itemData::2} parsed as number) + 1)
+	set {_nextItemID} to {_itemData::1}
+	replace all "%{_itemData::2}%" with "%{_nextItemLevel}%" in {_nextItemID}
+	if {-game_dataHandler::%{_nextItemID}%} is set:
+		set {_upgradeCostID} to {_nextItemID}
+		replace all "_ITEM" with "_UPGRADE_COST" in {_upgradeCostID}
+		set {_upgradeCost} to {-game_dataHandler::%{_upgradeCostID}%}
+		open chest with 3 row named "&cUpgrade Item (&e%{_itemData::2}% -> %{_nextItemLevel}%&c) (&e%game_dataHandler_public_getItemDisplay({_upgradeCost})%&c)" to {_player}
+	else:
+		open chest with 3 row named "&cUpgrade Item (Fully Upgraded)" to {_player}
+	loop 2 times:
+		loop 9 times:
+			format a gui slot ((((loop-number-1) - 1) * 18) + ((loop-number-2) - 1)) of {_player} with white glass named "&f" to do nothing
+	format a gui slot 9 of {_player} with white glass named "&f" to do nothing
+	format a gui slot 17 of {_player} with white glass named "&f" to do nothing
+	if {-game_dataHandler::%{_nextItemID}%} is not set:
+		format a gui slot 4 of {_player} with red glass named "&f" to do nothing
+		format a gui slot 22 of {_player} with red glass named "&f" to do nothing
+		format a gui slot 13 of {_player} with barrier named "&cUpgrade Request Denied!" with lore "&7This item is fully||&7upgraded." to do nothing
+		stop
+	format a gui slot 4 of {_player} with light green glass named "&f" to do nothing
+	format a gui slot 22 of {_player} with light green glass named "&f" to do nothing
+	format a gui slot 13 of {_player} with {-game_dataHandler::%{_nextItemID}%} to do nothing
+	format a gui slot 11 of {_player} with green wool named "&aUpgrade Item" with lore "&7Click to upgrade||&7your item." to close then run function game_shopHandler_itemUpgrade_confirmUpgrade({_player}, {_nextItemID}, {_upgradeCost}, {_itemSlot})
+	format a gui slot 15 of {_player} with red wool named "&cCancel" with lore "&7Click to cancel||&7the upgrade." to close
+
+function game_shopHandler_itemUpgrade_confirmUpgrade(player: player, nextItemID: text, upgradeCost: item, itemSlot: number):
+	set {_purchaseCostCheck} to game_shopHandler_itemShop_purchaseCostCheck({_player}, {_upgradeCost})
+	if {_purchaseCostCheck} is "NOT_ENOUGH_ITEMS":
+		set {_ownAmount::*} to game_shopHandler_itemShop_purchaseItem_getPlayerTotalItemAmount({_player}, {_upgradeCost})
+		set {_leftAmount} to (({_upgradeCost}'s item amount) - ({_ownAmount::1} + {_ownAmount::2}))
+		send "&cYou need &e%game_dataHandler_public_getItemDisplay({_upgradeCost})% &c(&e%{_leftAmount}% more&c) to upgrade this item!" to {_player}
+		stop
+#	remove {_upgradeCost} from {_player}'s inventory
+	set slot {_itemSlot} of {_player}'s inventory to air
+	set slot {_itemSlot} of {_player}'s inventory to {-game_dataHandler::%{_nextItemID}%}
+	send "&eYou have successfully upgraded your item!" to {_player}
+	game_logHandler_sendLog("%{_player}% upgraded item, new item: %game_dataHandler_public_getItemDisplay({-game_dataHandler::%{_nextItemID}%})% (COST = %{_upgradeCost}%)")

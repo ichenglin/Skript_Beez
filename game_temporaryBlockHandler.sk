@@ -1,0 +1,25 @@
+function game_temporaryBlockHandler_registerBlock(player: player, block: block):
+	set {_blockLocationID} to game_temporaryBlockHandler_getBlockLocationID({_block})
+	set {-game_temporaryBlockHandler::%{_blockLocationID}%_BLOCK_OWNER} to {_player}
+	add (white wool and white wool and yellow wool and orange wool and red wool and gray wool) to {_blockStages::*}
+	loop 6 times:
+		if (block at {_block}'s location) is air:
+			exit 1 loop
+		set block at ({_block}'s location) to {_blockStages::%loop-number%}
+		wait 5 seconds
+	set block at ({_block}'s location) to air
+	delete {-game_temporaryBlockHandler::%{_blockLocationID}%_BLOCK_OWNER}
+
+function game_temporaryBlockHandler_breakBlock(player: player, block: block):
+	set {_blockLocationID} to game_temporaryBlockHandler_getBlockLocationID({_block})
+	set block at ({_block}'s location) to air
+	if {-game_temporaryBlockHandler::%{_blockLocationID}%_BLOCK_OWNER} is not {_player}:
+		send "&eYou break &a%{-game_temporaryBlockHandler::%{_blockLocationID}%_BLOCK_OWNER}%&e's block!" to {_player}
+	delete {-game_temporaryBlockHandler::%{_blockLocationID}%_BLOCK_OWNER}
+
+function game_temporaryBlockHandler_isTemporaryBlock(block: block) :: boolean:
+	set {_blockLocationID} to game_temporaryBlockHandler_getBlockLocationID({_block})
+	return (check [{-game_temporaryBlockHandler::%{_blockLocationID}%_BLOCK_OWNER} is set])
+
+function game_temporaryBlockHandler_getBlockLocationID(block: block) :: text:
+	return "%{_block}'s x coords%_%{_block}'s y coords%_%{_block}'s z coords%"

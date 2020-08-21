@@ -1,0 +1,150 @@
+function game_questHandler_gui(player: player, type: text):
+	open chest with 5 row named "&cQuest" to {_player}
+	loop 2 times:
+		loop 9 times:
+			format a gui slot ((((loop-number-1) - 1) * 36) + (loop-number-2) - 1) of {_player} with white glass named "&f" to do nothing
+	loop 2 times:
+		loop 3 times:
+			format a gui slot (9 + (((loop-number-1) - 1) * 8) + (((loop-number-2) - 1) * 9)) of {_player} with white glass named "&f" to do nothing
+	set {_playerQuestCompletedLevel} to (stringDatasAPI_getData({playerData::%{_player}%_COMPLETED_QUEST_DATA}, {_type}) parsed as number)
+	set {_playerQuestCompletedLevel} to (check [{_playerQuestCompletedLevel} is set] ? {_playerQuestCompletedLevel} : 0)
+	set {_playerIncompleteQuest} to ({_playerQuestCompletedLevel} + 1)
+	set {_playerIncompleteQuestID} to "%{_type}%_%{_playerIncompleteQuest}%"
+	if {-game_dataHandler::%{_playerIncompleteQuestID}%_QUEST_DATA} is not set:
+		format a gui slot 22 of {_player} with nether star named "&cNo More Quest Available" with lore "&f||&7&oYou have completed all quest by||&7&othis npc, find another npc to unlock||&7&omore quests." to do nothing
+		stop
+	else if {-game_questHandler::%{_player}%_ACTIVE_QUEST} is set:
+		if {-game_questHandler::%{_player}%_ACTIVE_QUEST} is {_playerIncompleteQuestID}:
+			set {_completed} to game_questHandler_questData({_player}, {_type}, {_playerIncompleteQuest}, "CHECK_COMPLETED")
+			if {_completed} is true:
+				format a gui slot 22 of {_player} with chest named "&aTurn In Quest: %{-game_dataHandler::%{_playerIncompleteQuestID}%_QUEST_NAME}%" with lore "&f||&eLeft-Click to Turn In Quest||&f||&7&oNo description set." to close then run function game_questHandler_guiAction({_player}, {_type}, "TURN_IN_QUEST")
+			else:
+				format a gui slot 22 of {_player} with dye:1 named "&cCancel Quest: %{-game_dataHandler::%{_playerIncompleteQuestID}%_QUEST_NAME}%" with lore "&f||&eLeft-Click to Cancel Quest||&f||&7&oNo description set." to close then run function game_questHandler_guiAction({_player}, {_type}, "CANCEL_QUEST")
+			stop
+		format a gui slot 22 of {_player} with barrier named "&cActive Quest Found" with lore "&f||&7&oYou already have an active quest,||&7&ocomplete it or cancel it to||&7&ostart this quest." to do nothing
+		stop
+	format a gui slot 22 of {_player} with paper named "&aQuest: %{-game_dataHandler::%{_playerIncompleteQuestID}%_QUEST_NAME}%" with lore "&f||&eLeft-Click to Start Quest||&f||&eReward: &f%game_dataHandler_public_getItemDisplay(game_questHandler_textToItem({-game_dataHandler::%{_playerIncompleteQuestID}%_QUEST_REWARD}))%||&f||&7&oNo description set." to close then run function game_questHandler_guiAction({_player}, {_type}, "START_QUEST")
+
+function game_questHandler_guiAction(player: player, type: text, action: text):
+	if {_action} is "START_QUEST":
+		send "&aYou have started the quest!" to {_player}
+		set {_none} to game_questHandler_playerQuest({_player}, {_type}, "START")
+	else if {_action} is "TURN_IN_QUEST":
+		set {_return} to game_questHandler_playerQuest({_player}, {_type}, "TURN_IN")
+		if {_return} is "QUEST_NOT_COMPLETED":
+			send "&cYou have not completed the quest yet!" to {_player}
+			stop
+	else if {_action} is "CANCEL_QUEST":
+		delete {-game_questHandler::%{_player}%_ACTIVE_QUEST}
+		send "&cYou have canceled the quest!" to {_player}
+	game_playerDisplayHandler_sidebar_updatePlayerSidebar({_player})
+
+function game_questHandler_loadData(player: player):
+	if {playerData::%{_player}%_ACTIVE_QUEST_DATA} is "NO_ACTIVE_QUEST":
+		stop
+	set {-game_questHandler::%{_player}%_ACTIVE_QUEST} to stringDatasAPI_getData({playerData::%{_player}%_ACTIVE_QUEST_DATA}, "ACTIVE_QUEST")
+	set {_statNames::*} to stringDatasAPI_getDataNames({playerData::%{_player}%_ACTIVE_QUEST_DATA})
+	loop {_statNames::*}:
+		set {_loopStatName} to {_statNames::%loop-index%}
+		if {_loopStatName} is not "ACTIVE_QUEST":
+			set {-game_questHandler::%{_player}%_%{_loopStatName}%_RECORD} to (stringDatasAPI_getData({playerData::%{_player}%_ACTIVE_QUEST_DATA}, {_loopStatName}) parsed as number)
+	game_logHandler_sendLog("Quest data loaded for %{_player}%: %{playerData::%{_player}%_ACTIVE_QUEST_DATA}%")
+
+function game_questHandler_saveData(player: player):
+	if {-game_questHandler::%{_player}%_ACTIVE_QUEST} is not set:
+		set {playerData::%{_player}%_ACTIVE_QUEST_DATA} to "NO_ACTIVE_QUEST"
+	set {_questID} to {-game_questHandler::%{_player}%_ACTIVE_QUEST}
+	set {_questData::*} to {-game_dataHandler::%{_questID}%_QUEST_DATA} split by ","
+	if {-game_questHandler::%{_player}%_ACTIVE_QUEST} is not set:
+		set {playerData::%{_player}%_ACTIVE_QUEST_DATA} to "NO_ACTIVE_QUEST"
+	else:
+		set {playerData::%{_player}%_ACTIVE_QUEST_DATA} to stringDatasAPI_setData("ACTIVE_QUEST", {-game_questHandler::%{_player}%_ACTIVE_QUEST})
+		loop {_questData::*}:
+			set {_loopData::*} to {_questData::%loop-index%} split by ":"
+			set {_statName} to "%{_loopData::1}%_%{_loopData::2}%"
+			set {playerData::%{_player}%_ACTIVE_QUEST_DATA} to stringDatasAPI_setData({_statName}, "%{-game_questHandler::%{_player}%_%{_statName}%_RECORD}%", {playerData::%{_player}%_ACTIVE_QUEST_DATA})
+	game_logHandler_sendLog("Quest data saved for %{_player}%: %{playerData::%{_player}%_ACTIVE_QUEST_DATA}%")
+
+function game_questHandler_playerQuest(player: player, type: text, mode: text = "START") :: text:
+	set {_playerQuestCompletedLevel} to (stringDatasAPI_getData({playerData::%{_player}%_COMPLETED_QUEST_DATA}, {_type}) parsed as number)
+	set {_playerQuestCompletedLevel} to (check [{_playerQuestCompletedLevel} is set] ? {_playerQuestCompletedLevel} : 0)
+	set {_playerIncompleteQuest} to ({_playerQuestCompletedLevel} + 1)
+	set {_playerIncompleteQuestID} to "%{_type}%_%{_playerIncompleteQuest}%"
+	if {_mode} is "START":
+		if {-game_dataHandler::%{_playerIncompleteQuestID}%_QUEST_DATA} is not set:
+			return "QUEST_NOT_FOUND"
+		set {_none} to game_questHandler_questData({_player}, {_type}, {_playerIncompleteQuest}, "SETUP")
+		set {-game_questHandler::%{_player}%_ACTIVE_QUEST} to "%{_type}%_%{_playerIncompleteQuest}%"
+#		game_questHandler_saveData({_player})
+		return "QUEST_STARTED"
+	else if {_mode} is "TURN_IN":
+		set {_completed} to game_questHandler_questData({_player}, {_type}, {_playerIncompleteQuest}, "CHECK_COMPLETED")
+		if {_completed} is false:
+			return "QUEST_NOT_COMPLETED"
+		set {_none} to game_questHandler_questData({_player}, {_type}, {_playerIncompleteQuest}, "CLEAR")
+		set {playerData::%{_player}%_COMPLETED_QUEST_DATA} to stringDatasAPI_setData(({_type} in upper case), "%{_playerIncompleteQuest}%", {playerData::%{_player}%_COMPLETED_QUEST_DATA})
+		set {_reward} to game_questHandler_textToItem({-game_dataHandler::%{_playerIncompleteQuestID}%_QUEST_REWARD})
+		give {_reward} to {_player}
+		send "&aYou have received &6%game_dataHandler_public_getItemDisplay({_reward})% &afor completing the quest!" to {_player}
+		delete {-game_questHandler::%{_player}%_ACTIVE_QUEST}
+#		game_questHandler_saveData({_player})
+		return "QUEST_TURNED_IN"
+
+function game_questHandler_questData(player: player, type: text, id: number, mode: text = "SETUP") :: boolean:
+	set {_questID} to "%{_type}%_%{_id}%"
+	set {_questData::*} to {-game_dataHandler::%{_questID}%_QUEST_DATA} split by ","
+	loop {_questData::*}:
+		set {_loopData::*} to {_questData::%loop-index%} split by ":"
+		if {_mode} is "SETUP":
+			set {-game_questHandler::%{_player}%_%{_loopData::1}%_%{_loopData::2}%_RECORD} to 0
+		else if {_mode} is "CLEAR":
+			delete {-game_questHandler::%{_player}%_%{_loopData::1}%_%{_loopData::2}%_RECORD}
+		else if {_mode} is "CHECK_COMPLETED":
+			set {_completeNeededAmount} to ({_loopData::3} parsed as number)
+			if {-game_questHandler::%{_player}%_%{_loopData::1}%_%{_loopData::2}%_RECORD} < {_completeNeededAmount}:
+				return false
+	return true
+
+function game_questHandler_printQuestProgress(player: player) :: objects:
+	set {_questID} to {-game_questHandler::%{_player}%_ACTIVE_QUEST}
+	set {_questData::*} to {-game_dataHandler::%{_questID}%_QUEST_DATA} split by ","
+	loop {_questData::*}:
+		set {_loopData::*} to {_questData::%loop-index%} split by ":"
+		if {_loopData::1} is "MINING":
+			set {_oreData::*} to game_dataHandler_oreBlocks_getData(({_loopData::2} parsed as item))
+			add "Mine %{_loopData::3}% %uncolored {_oreData::1}'s name%" to {_return::*}
+		else if {_loopData::1} is "FINDING":
+			add "Find %{_loopData::3}% %uncolored {-game_dataHandler::%{_loopData::2}%}'s name%" to {_return::*}
+		else if {_loopData::1} is "BUYING":
+			add "Buy %{_loopData::3}% %uncolored {-game_dataHandler::%{_loopData::2}%}'s name%" to {_return::*}
+		else if {_loopData::1} is "KILLING":
+			add "Kill %{_loopData::3}% %{_loopData::2}%" to {_return::*}
+		else if {_loopData::1} is "RANGED_KILLING":
+			add "Kill %{_loopData::3}% %{_loopData::2}% With Bow" to {_return::*}
+		else if {_loopData::1} is "COLLECTING":
+			add "Collect %{_loopData::3}% %uncolored {-game_dataHandler::%{_loopData::2}%}'s name%" to {_return::*}
+		else if {_loopData::1} is "PLACING":
+			add "Place %{_loopData::3}% %{_loopData::2}%" to {_return::*}
+		else if {_loopData::1} is "SHOOTING":
+			add "Shoot %{_loopData::3}% %uncolored {-game_dataHandler::%{_loopData::2}%}'s name%" to {_return::*}
+		set {_recordedAmount} to {-game_questHandler::%{_player}%_%{_loopData::1}%_%{_loopData::2}%_RECORD}
+		set {_neededAmount} to ({_loopData::3} parsed as number)
+		set {_recordedAmount} to (check [{_recordedAmount} > {_neededAmount}] ? {_neededAmount} : {_recordedAmount})
+		add "%{_recordedAmount}%/%{_neededAmount}%" to {_return::*}
+		if {_recordedAmount} or {_loopData::3} is 0:
+			add "0%%" to {_return::*}
+		else if {_recordedAmount} is {_neededAmount}:
+			add "&aCompleted" to {_return::*}
+		else:
+			add "%floor({_recordedAmount} / {_neededAmount} * 100)%%%" to {_return::*}
+	return {_return::*}
+
+function game_questHandler_recordStat(player: player, statName: text, amount: number):
+	add {_amount} to {-game_questHandler::%{_player}%_%{_statName}%_RECORD}
+	game_playerDisplayHandler_sidebar_updatePlayerSidebar({_player})
+
+function game_questHandler_textToItem(text: text) :: item:
+	set {_textSplit::*} to {_text} split by ":"
+	set {_amount} to ({_textSplit::2} parsed as number)
+	set {_item} to {-game_dataHandler::%{_textSplit::1}%}
+	return ({_amount} of {_item})

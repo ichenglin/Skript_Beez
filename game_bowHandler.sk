@@ -1,0 +1,6 @@
+function game_bowHandler_arrowRaritySelector(player: player) :: text:
+	set {_arrowTypes::*} to "CHARGED_ARROW_ITEM" and "SPIKED_ARROW_ITEM" and "ROYAL_ARROW_ITEM" and "ARROW_ITEM"
+	loop {_arrowTypes::*}:
+		set {_loopArrowType} to {_arrowTypes::%loop-index%}
+		if (amount of {-game_dataHandler::%{_loopArrowType}%} in {_player}'s inventory) > 0:
+			return {_loopArrowType}

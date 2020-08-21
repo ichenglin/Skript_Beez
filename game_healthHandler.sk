@@ -1,0 +1,148 @@
+function game_healthHandler_heal(entity: entity):
+	game_healthHandler_set({_entity}, game_healthHandler_getEntityMaximumHealth({_entity}))
+
+function game_healthHandler_set(entity: entity, health: number):
+	game_healthHandler_setEntityHealth({_entity}, {_health})
+	if {_entity} is a player:
+		game_playerDisplayHandler_playerHealth({_entity})
+
+function game_healthHandler_damage(attacker: entity, victim: entity, damage: number, damageType: text = "UNKNOWN"):
+	if {_victim} is a player:
+		game_playerDisplayHandler_playerBlood({_victim})
+		set {_victim}'s health to ({_victim}'s health - 0.001)
+		play sound "entity.player.hurt" with volume 99999 and pitch 1 at ({_victim}'s location) for {_victim}
+		if {_attacker} is set:
+			push {_victim} (direction from {_attacker} to {_victim}) at speed 1
+	set {_victimHealth} to game_healthHandler_getEntityHealth({_victim})
+	set {_victimProtection} to game_healthHandler_getEntityProtection({_victim})
+	if {_attacker} is a player:
+		set {_isCritical} to game_healthHandler_checkCritical({_attacker})
+		if {_isCritical} is true:
+			game_healthHandler_criticalDamageIndicator({_attacker}, {_victim})
+		set {_damage} to game_healthHandler_applyCriticalDamage({_attacker}, {_isCritical}, ({_damage} * (1 - ({_victimProtection} / 100))))
+	else:
+		set {_damage} to ({_damage} * (1 - ({_victimProtection} / 100)))
+	if {_damage} > {_victimHealth}:
+		set {_damage} to {_victimHealth}
+		set {_remainHealth} to 0
+	else:
+		set {_remainHealth} to ({_victimHealth} - {_damage})	
+	if {_victim} is not a player:
+		set {_victimUUID} to ({_victim}'s UUID)
+		add {_damage} to {-game_mobHandler::%{_victimUUID}%_DAMAGE_TAKEN::%{_attacker}%}
+	if {_remainHealth} <= 0:
+		game_healthHandler_death({_attacker}, {_victim}, {_damageType})
+		stop
+	game_logHandler_sendLog("%{_attacker}% attacked %{_victim}%, victim remain health: %{_remainHealth}%")
+	game_healthHandler_set({_victim}, {_remainHealth})
+	if {_victim} is a player:
+		set {-game_healthHandler::%{_victim}%_LAST_DAMAGE} to now
+		game_playerDisplayHandler_playerActionbar({_victim})
+		game_playerDisplayHandler_playerHealth({_victim})
+
+function game_healthHandler_death(attacker: entity, victim: entity, damageType: text = "UNKNOWN"):
+	set {_victimUUID} to ({_victim}'s UUID)
+	if {_attacker} is a player:
+		if {_victim} is a player:
+			set {_questKilledType} to "Player"
+		else:
+			set {_questKilledType} to {-entityData::%{_victimUUID}%_NAME}
+		game_questHandler_recordStat({_attacker}, "KILLING_%{_questKilledType}%", 1)
+		if {_damageType} is "RANGED_DAMAGE":
+			game_questHandler_recordStat({_attacker}, "RANGED_KILLING_%{_questKilledType}%", 1)
+	if {_victim} is a player:
+		if {_attacker} is a player:
+			add 1 to {-game_playerStatsHandler::%{_victim}%_DEATHS}
+		game_mobHandler_removeFromTargets({_victim})
+		game_playerDisplayHandler_sidebar_updatePlayerSidebar({_victim})
+		if {_attacker} is a player:
+			add 1 to {-game_playerStatsHandler::%{_attacker}%_KILLS}
+			game_playerDisplayHandler_sidebar_updatePlayerSidebar({_attacker})
+			send "&c&lDEATH! &e%{_victim}% has been killed by %{_attacker}%!" to all players
+		else:
+			send "&c&lDEATH! &e%{_victim}% has died!" to all players
+		wait 1 tick
+		game_healthbarHandler_teleport({_victim}, {-game_dataHandler::SPAWN_LOCATION})
+	else:
+		add 1 to {-entityData::%{_victimUUID}%_DEATH_COUNT}
+		game_mobHandler_rewardAttackers({_victim})
+		delete {-game_mobHandler::%{_victimUUID}%_DAMAGE_TAKEN::*}
+		set {_deathLocation} to {-entityData::%{_victimUUID}%_SPAWN_LOCATION}
+		set {_deathLocation}'s y coords to 96
+		game_healthbarHandler_remove({_victim})
+		wait 1 tick
+		game_healthbarHandler_teleport({_victim}, {_deathLocation})
+	game_logHandler_sendLog("%{_attacker}% killed %{_victim}%.")
+	if {_victim} is a player:
+		game_healthHandler_heal({_victim})
+	else:
+		wait 5 seconds
+		game_healthbarHandler_teleport({_victim}, {-entityData::%{_victimUUID}%_SPAWN_LOCATION})
+		wait 5 ticks
+		game_healthbarHandler_new({_victim})
+		wait 1 tick
+		game_healthHandler_heal({_victim})
+
+function game_healthHandler_healthRegeneration(player: player):
+	if {playerData::%{_player}%_HEALTH} >= {playerData::%{_player}%_HEALTH_MAX}:
+		stop
+	if (difference between {-game_healthHandler::%{_player}%_LAST_DAMAGE} and now) < ("5 seconds" parsed as time span):
+		stop
+	set {_regenHealth} to ({playerData::%{_player}%_HEALTH} + ceil({playerData::%{_player}%_HEALTH_MAX} * ({playerData::%{_player}%_HEALTH_REGENERATION} / 100)))
+	set {_regenHealth} to (check [{_regenHealth} > {playerData::%{_player}%_HEALTH_MAX}] ? {playerData::%{_player}%_HEALTH_MAX} : {_regenHealth})
+	game_healthHandler_set({_player}, {_regenHealth})
+
+function game_healthHandler_getEntityHealth(entity: entity) :: number:
+	if {_entity} is a player:
+		return {playerData::%{_entity}%_HEALTH}
+	set {_entityUUID} to ({_entity}'s UUID)
+	if {-entityData::%{_entityUUID}%_HEALTH} is set:
+		return {-entityData::%{_entityUUID}%_HEALTH}
+	return game_healthHandler_getEntityMaximumHealth({_entity})
+
+function game_healthHandler_getEntityMaximumHealth(entity: entity) :: number:
+	if {_entity} is a player:
+		return {playerData::%{_entity}%_HEALTH_MAX}
+	set {_entityUUID} to ({_entity}'s UUID)
+	return {-entityData::%{_entityUUID}%_HEALTH_MAX}
+
+function game_healthHandler_getEntityProtection(entity: entity) :: number:
+	if {_entity} is a player:
+		return {playerData::%{_entity}%_PROTECTION}
+	set {_entityUUID} to ({_entity}'s UUID)
+	return {-entityData::%{_entityUUID}%_PROTECTION}
+
+function game_healthHandler_setEntityHealth(entity: entity, health: number):
+	if {_entity} is a player:
+		set {playerData::%{_entity}%_HEALTH} to {_health}
+	else:
+		set {_entityUUID} to ({_entity}'s UUID)
+		set {-entityData::%{_entityUUID}%_HEALTH} to {_health}
+	game_healthbarHandler_update({_entity})
+
+function game_healthHandler_checkCritical(player: player) :: boolean:
+	set {_criticalChance} to {playerData::%{_player}%_CRITICAL_CHANCE}
+	set {_random} to (random number between 0 and 100)
+	if {_criticalChance} >= {_random}:
+		return true
+	return false
+
+function game_healthHandler_applyCriticalDamage(player: player, isCritical: boolean, damage: number) :: number:
+	if {_isCritical} is true:
+		set {_criticalMultiplier} to (1 + ({playerData::%{_player}%_CRITICAL_POWER} / 100))
+		return ({_damage} * {_criticalMultiplier})
+	return {_damage}
+
+function game_healthHandler_criticalDamageIndicator(attacker: player, victim: entity):
+	set {_location} to (location 1 meter above {_victim}'s location)
+	set {_location}'s x coords to ({_location}'s x coords + (random number between -1 and 1))
+	set {_location}'s y coords to ({_location}'s y coords + (random number between -1 and 1))
+	set {_location}'s z coords to ({_location}'s z coords + (random number between -1 and 1))
+	set {_indicator} to game_indicatorHandler_add("&f", {_location})
+	loop 12 times:
+		if floor(loop-number / 2) is (loop-number / 2):
+			game_indicatorHandler_edit({_indicator}, "&c&l⚠ CRITICAL +%{playerData::%{_attacker}%_CRITICAL_POWER}%%% ⚠")
+		else:
+			game_indicatorHandler_edit({_indicator}, "&6&l⚠ CRITICAL +%{playerData::%{_attacker}%_CRITICAL_POWER}%%% ⚠")
+		wait 5 ticks
+	kill {_indicator}

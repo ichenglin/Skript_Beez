@@ -1,0 +1,94 @@
+function game_mobHandler_target(mob: entity, previousDeaths: number):
+	set {_mobUUID} to ({_mob}'s UUID)
+	set {_mobDamage} to {-entityData::%{_mobUUID}%_DAMAGE}
+	set {_mobReach} to {-entityData::%{_mobUUID}%_REACH}
+	set {_mobSpeed} to {-entityData::%{_mobUUID}%_SPEED}
+	set {-game_mobHandler::ACTIVE_MOBS::%{_mobUUID}%} to {_mob}
+	add "{NoAI:0}" to entity-nbt of {_mob}
+	game_logHandler_sendLog("Mob %{_mobUUID}% started to target.")
+	while (true):
+		if (amount of {-game_mobHandler::%{_mobUUID}%_TARGETS::*}) <= 0:
+			set {_stopTargetReason} to "TARGETS_NOT_FOUND"
+			exit 1 loop
+		else if {-entityData::%{_mobUUID}%_DEATH_COUNT} is not {_previousDeaths}:
+			set {_stopTargetReason} to "MOB_DIED"
+			exit 1 loop
+		set {_targetedRange} to 99999
+		loop {-game_mobHandler::%{_mobUUID}%_TARGETS::*}:
+			set {_loopEnemy} to {-game_mobHandler::%{_mobUUID}%_TARGETS::%loop-index%}
+			set {_distanceToEnemy} to (distance between {_loopEnemy} and {_mob})
+			if ({_distanceToEnemy} < {_targetedRange}):
+				set {_targetedRange} to {_distanceToEnemy}
+				set {_target} to {_loopEnemy}
+		if game_mobHandler_checkAllowJump({_mob}, {_target}) is true:
+			set {_teleportLocation} to ({_mob}'s location)
+			set {_teleportLocation}'s pitch to 0.1
+			set {_teleportLocation} to (location 2 meters infront of {_teleportLocation})
+			set {_yDifference} to (difference between ({_mob}'s y coords) and ({_target}'s y coords))
+			set {_teleportLocation} to (location ({_yDifference} + 1) meters above {_teleportLocation})
+			game_healthbarHandler_teleport({_mob}, {_teleportLocation})
+		make {_mob} pathfind to {_target} with speed {_mobSpeed}
+		if (distance between {_mob} and {_target}) <= {_mobReach}:
+			game_healthHandler_damage({_mob}, {_target}, {_mobDamage})
+		wait 10 ticks
+	add "{NoAI:1}" to entity-nbt of {_mob}
+	delete {-game_mobHandler::ACTIVE_MOBS::%{_mobUUID}%}
+	if {_stopTargetReason} is "MOB_DIED":
+		delete {-game_mobHandler::%{_mobUUID}%_TARGETS::*}
+	else:
+		game_healthbarHandler_teleport({_mob}, {-entityData::%{_mobUUID}%_SPAWN_LOCATION})
+	game_logHandler_sendLog("Mob %{_mobUUID}% forgive target. (REASON = %{_stopTargetReason}%)")
+
+function game_mobHandler_checkAllowJump(entity: entity, target: entity) :: boolean:
+	set {_yDifference} to (({_target}'s y coords) - ({_entity}'s y coords))
+	if {_yDifference} < 1.8:
+		return false
+	set {_detectLocation} to (location 0.5 meters above {_entity}'s location)
+	set {_direction} to (direction from {_entity} to {_target})
+	set {_detectLocation}'s yaw to ({_direction}'s yaw)
+	set {_detectLocation}'s pitch to 0.1
+	set {_hitboxLength} to (hitbox length of {_entity})
+	set {_blockBetween} to (block at location (({_hitboxLength} / 2) + 0.8) meters infront of {_detectLocation})
+	if block at {_blockBetween} is green clay or light green clay or gray clay:
+		return true
+	return false
+
+function game_mobHandler_removeFromTargets(entity: entity):
+	set {_entityUUID} to ({_entity}'s UUID)
+	loop {-game_mobHandler::ACTIVE_MOBS::*}:
+		set {_loopMobUUID} to loop-index
+		if {-game_mobHandler::%{_loopMobUUID}%_TARGETS::%{_entityUUID}%} is set:
+			delete {-game_mobHandler::%{_loopMobUUID}%_TARGETS::%{_entityUUID}%}
+
+function game_mobHandler_rewardAttackers(entity: entity):
+	set {_entityUUID} to ({_entity}'s UUID)
+	loop {-game_mobHandler::%{_entityUUID}%_DAMAGE_TAKEN::*}:
+		set {_loopAttacker} to (loop-index parsed as player)
+		if {_loopAttacker} is online:
+			if ({-entityData::%{_entityUUID}%_HEALTH_MAX} * 0.2) <= {-game_mobHandler::%{_entityUUID}%_DAMAGE_TAKEN::%loop-index%}:
+#				set {_percentage} to ({-game_mobHandler::%{_entityUUID}%_DAMAGE_TAKEN::%loop-index%} / {-entityData::%{_entityUUID}%_HEALTH_MAX} / 100)
+				set {_loots::*} to game_dataHandler_public_textToItems({-entityData::%{_entityUUID}%_LOOT_ITEMS}, {_loopAttacker})
+#				send "&eYou have damaged &6%{-entityData::%{_entityUUID}%_NAME}% &eby &6%{_percentage}%%% &eof health and received:" to {_loopAttacker}
+#				loop {_loots::*}:
+#					set {_loopLoot} to {_loots::%loop-index-2%}
+#					send "&e> &6%game_dataHandler_public_getItemDisplay({_loopLoot})%" to {_loopAttacker}
+				give {_loots::*} to {_loopAttacker}
+			else:
+				send "&eYou didn't do enough damage to get loot from &6%{-entityData::%{_entityUUID}%_NAME}%&e!" to {_loopAttacker}
+		delete {_loopAttacker}
+			
+
+function game_mobHandler_killAll():
+	set {_mobList::*} to {-game_dataHandler::MOB_LIST} split by ":"
+	loop {_mobList::*}:
+		set {_loopUUID} to {_mobList::%loop-index%}
+		set {_inKillList::%{_loopUUID}%} to true
+		game_logHandler_sendLog("Removed mob %{_loopUUID}%.")
+		game_healthbarHandler_remove({-entityData::%{_loopUUID}%_ENTITY})
+#		game_healthbarHandler_teleport({-entityData::%{_loopUUID}%_ENTITY}, (location at (0.5, 1, 0.5) in world("minepvp")))
+		kill {-entityData::%{_loopUUID}%_ENTITY}
+	loop {-entityData::*}:
+		set {_dataNameSplit::*} to loop-index split by "_"
+		if {_inKillList::%{_dataNameSplit::1}%} is set:
+			delete {-entityData::%loop-index%}
+	delete {-game_dataHandler::MOB_LIST}

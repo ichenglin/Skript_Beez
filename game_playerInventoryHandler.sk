@@ -1,0 +1,37 @@
+function game_playerInventoryHandler_saveInventory(player: player):
+	set {_playerInventoryRaw} to ""
+	set {_inventoryItemsData::*} to game_playerInventoryHandler_getItemsInInventoryWithID({_player})
+	set {_itemsAmount} to ((amount of {_inventoryItemsData::*}) / 2)
+	if {_itemsAmount} <= 0:
+		set {_playerInventoryRaw} to "NO_ITEMS"
+	else:
+		loop {_itemsAmount} times:
+			set {_loopSlotNumber} to (((loop-number - 1) * 2) + 1)
+			set {_loopItemNumber} to (loop-number * 2)
+			set {_playerInventoryRaw} to stringDatasAPI_setData("INVENTORY_SLOT_%{_inventoryItemsData::%{_loopSlotNumber}%}%", {_inventoryItemsData::%{_loopItemNumber}%}, {_playerInventoryRaw})
+	set {playerData::%{_player}%_SAVED_INVENTORY} to {_playerInventoryRaw}
+	game_logHandler_sendLog("Saved %{_player}%'s inventory data: %{playerData::%{_player}%_SAVED_INVENTORY}%")
+
+function game_playerInventoryHandler_loadInventory(player: player):
+	set {_playerSavedInventoryData::*} to stringDatasAPI_getDataNames({playerData::%{_player}%_SAVED_INVENTORY})
+	clear {_player}'s inventory
+	loop {_playerSavedInventoryData::*}:
+		set {_loopID} to {_playerSavedInventoryData::%loop-index%}
+		set {_loopIDSplit::*} to {_loopID} split by "_"
+		set {_loopSlot} to ({_loopIDSplit::3} parsed as number)
+		set {_loopSlotItemID} to stringDatasAPI_getData({playerData::%{_player}%_SAVED_INVENTORY}, {_loopID})
+		set {_loopSlotItemIDSplit::*} to {_loopSlotItemID} split by ":"
+		set {_loopSlotItemAmount} to ({_loopSlotItemIDSplit::2} parsed as number)
+		set slot {_loopSlot} of {_player}'s inventory to ({_loopSlotItemAmount} of {-game_dataHandler::%{_loopSlotItemIDSplit::1}%})
+	game_equipmentHandler_updatePlayerEquipmentStats({_player})
+	game_logHandler_sendLog("Loaded %{_player}%'s inventory data: %{playerData::%{_player}%_SAVED_INVENTORY}%")
+
+function game_playerInventoryHandler_getItemsInInventoryWithID(player: player) :: objects:
+	loop 40 times:
+		set {_loopSlot} to (loop-number - 1)
+		set {_loopItem} to slot {_loopSlot} of {_player}'s inventory
+		set {_itemData::*} to game_itemDataHandler_itemData_getDatas({_loopItem}, "ID")
+		if {_itemData::*} is set:
+			add {_loopSlot} and "%{_itemData::1}%:%{_loopItem}'s item amount%" to {_inventoryItemsReturn::*}
+		delete {_itemData::*}
+	return {_inventoryItemsReturn::*}

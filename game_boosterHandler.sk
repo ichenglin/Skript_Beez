@@ -1,0 +1,51 @@
+function game_boosterHandler_new(player: player, type: text, length: time span):
+	set {_expireTime} to now
+	add {_length} to {_expireTime}
+	set {playerData::%{_player}%_PERSONAL_BOOSTER_EXPIRE_TIME} to {_expireTime}
+	set {playerData::%{_player}%_PERSONAL_BOOSTER_TYPE} to {_type}
+	set {_previousID} to {playerData::%{_player}%_PERSONAL_BOOSTER_ID}
+	while (true):
+		set {_newID} to "%{_type}%_%(random integer between 100000 and 999999)%"
+		if {_newID} is not {_previousID}:
+			exit 1 loop
+	set {playerData::%{_player}%_PERSONAL_BOOSTER_ID} to {_newID}
+	game_logHandler_sendLog("New personal booster applied to %{_player}%. (TYPE = %{_type}%) (LENGTH = %{_length}%)")
+	game_playerDisplayHandler_playerActionbar({_player})
+	game_boosterHandler_countdown({_player}, {_newID})
+	send "&eYou have received &6%game_boosterHandler_getBoosterName({_type})% &efor &6%{_length}% &epersonal booster." to {_player}
+	if {_previousID} is set:
+		send "&eYour previous personal booster have been replaced." to {_player}
+
+function game_boosterHandler_countdown(player: player, boosterID: text):
+	set {_expireTime} to {playerData::%{_player}%_PERSONAL_BOOSTER_EXPIRE_TIME}
+	game_logHandler_sendLog("A new personal booster countdown started for %{_player}%.")
+	while (true):
+		if {playerData::%{_player}%_PERSONAL_BOOSTER_ID} is not {_boosterID}:
+			exit 1 loop
+		else if {_player} is not online:
+			exit 1 loop
+		else if now is greater than {_expireTime}:
+			game_boosterHandler_checkExpire({_player})
+			exit 1 loop
+		wait 2 second
+	game_logHandler_sendLog("%{_player}%'s personal booster countdown ended due to replaced/expired/quit.")
+
+function game_boosterHandler_checkExpire(player: player):
+	if now is greater than {playerData::%{_player}%_PERSONAL_BOOSTER_EXPIRE_TIME}:
+		send "&eYour personal booster (%game_boosterHandler_getBoosterName({playerData::%{_player}%_PERSONAL_BOOSTER_TYPE})%) expired!" to {_player}
+		delete {playerData::%{_player}%_PERSONAL_BOOSTER_EXPIRE_TIME}
+		delete {playerData::%{_player}%_PERSONAL_BOOSTER_TYPE}
+		delete {playerData::%{_player}%_PERSONAL_BOOSTER_ID}
+		game_playerDisplayHandler_playerActionbar({_player})
+		game_logHandler_sendLog("%{_player}%'s personal booster expired.")
+
+function game_boosterHandler_getBoosterData(type: text) :: objects:
+	set {_split::*} to {_type} split by ":"
+	set {_amount} to (check [{_split::2} is set] ? ({_split::2} parsed as number) : 1)
+	return ({_split::1} and {_amount})
+
+function game_boosterHandler_getBoosterName(type: text) :: text:
+	set {_split::*} to {_type} split by ":"
+	if {_split::2} is not set:
+		return {_split::1}
+	return "X%{_split::2}% %{_split::1}%"

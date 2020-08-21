@@ -1,0 +1,45 @@
+function game_crateHandler_gui(player: player):
+	open chest with 6 row named "&6Crate" to {_player}
+	loop 2 times:
+		loop 9 times:
+			format a gui slot ((((loop-number-1) - 1) * 45) + (loop-number-2) - 1) of {_player} with white glass named "&f" to do nothing
+	loop 2 times:
+		loop 4 times:
+			format a gui slot (9 + (((loop-number-1) - 1) * 8) + (((loop-number-2) - 1) * 9)) of {_player} with white glass named "&f" to do nothing
+	format a gui slot 22 of {_player} with book named "&aItem Crate" with lore "&7You will need &e&oat least one crate key &7&oto open a||&7&ocrate, rewards will be given after opening. The||&e&orewards of crate are given randomly&7&o, which means||&7&othat you &e&ohave chance to get very rare items &7&ofrom||&7&oopening crates." to do nothing
+	format a gui slot 29 of {_player} with ender chest named "&aOpen Crate" with lore "&f||&eClick to Open||&f||&7&oOpen the item crate with key" to do nothing
+	format a gui slot 33 of {_player} with paper named "&aView Crate" with lore "&f||&eClick to View||&f||&7&oView the items in the crate" to do nothing
+
+function game_crateHandler_open(player: player, rollTimes: number = 60):
+	set {-game_crateHandler::%{_player}%} to now
+	loop 5 times:
+		set {_rewardSlot::%loop-number%} to air
+	loop {_rollTimes} times:
+		loop 4 times:
+			set {_rewardSlot::%loop-number-2%} to {_rewardSlot::%(loop-number-2 + 1)%}
+		set {_random} to random integer between 1 and 100
+		if {_random} <= 50:
+			set {_rewardSlot::5} to game_dataHandler_items_getItem("LITTER", 20)
+		else if {_random} <= 80:
+			set {_rewardSlot::5} to game_dataHandler_items_getItem("STONE", 10)
+		else if {_random} <= 99:
+			set {_rewardSlot::5} to game_dataHandler_items_getItem("TEMPORARY_BLOCK", 5)
+		else:
+			set {_rareItemChance::%loop-number%} to 1
+			set {_rewardSlot::5} to game_dataHandler_items_getItem("COCAINE", 1)
+		if (inventory name of current inventory of {_player}) is not "&cCrate":
+			open chest with 5 row named "&6Crate" to {_player}
+			format a gui slot 13 of {_player} with orange glass to do nothing
+			format a gui slot 31 of {_player} with orange glass to do nothing
+		loop 5 times:
+			format a gui slot (19 + loop-number-2) of {_player} with {_rewardSlot::%loop-number-2%} to do nothing
+		play sound "entity.experience_orb.pickup" with volume 99999 and pitch 1 at {_player}'s location for {_player}
+		wait 2 ticks
+	give {_rewardSlot::3} to {_player}
+	wait 1 second
+	close {_player}'s inventory
+	send "&dYou found &a%game_dataHandler_public_getItemDisplay({_rewardSlot::3})% &dfrom the crate!" to {_player}
+	set {_chosenItemSlot} to ({_rollTimes} - 2)
+	if {_rareItemChance::%{_chosenItemSlot}%} is set:
+		send "&cCongratulations! &6%{_player}% &chas found &6%game_dataHandler_public_getItemDisplay({_rewardSlot::3})% &c(%{_rareItemChance::%{_chosenItemSlot}%}%%%) from crate!" to all players
+	delete {-game_crateHandler::%{_player}%}

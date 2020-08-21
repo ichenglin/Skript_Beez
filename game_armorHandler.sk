@@ -1,0 +1,13 @@
+function game_armorHandler_armor_getArmor(name: text, armorType: number, level: number, levelStats: text, colorID: number) :: item:
+	if {_armorType} is 1:
+		set {_armor} to (unbreakable leather helmet named {_name} with lore "&7&oArmor||&f||&eLevel: &f%{_level}%||&f||%{_levelStats}%" without any NBT)
+	else if {_armorType} is 2:
+		set {_armor} to (unbreakable leather chestplate named {_name} with lore "&7&oArmor||&f||&eLevel: &f%{_level}%||&f||%{_levelStats}%" without any NBT)
+	else if {_armorType} is 3:
+		set {_armor} to (unbreakable leather leggings named {_name} with lore "&7&oArmor||&f||&eLevel: &f%{_level}%||&f||%{_levelStats}%" without any NBT)
+	else if {_armorType} is 4:
+		set {_armor} to (unbreakable leather boots named {_name} with lore "&7&oArmor||&f||&eLevel: &f%{_level}%||&f||%{_levelStats}%" without any NBT)
+#	dye is broken in this version of Skript
+#	dye {_armor} {_color}
+	add "{display:{color:%{_colorID}%},HideFlags:127}" to entity-nbt of {_armor}
+	return {_armor}

@@ -1,0 +1,19 @@
+function game_playerStatsHandler_saveStats(player: player):
+	add "KILLS" and "DEATHS" and "MINED_BLOCKS" to {_saveStatTypes::*}
+	loop {_saveStatTypes::*}:
+		set {_loopType} to {_saveStatTypes::%loop-index%}
+		set {_playerStatsRaw} to stringDatasAPI_setData("PLAYER_%{_loopType}%", "%{-game_playerStatsHandler::%{_player}%_%{_loopType}%}%", {_playerStatsRaw})
+	set {playerData::%{_player}%_SAVED_STATS} to {_playerStatsRaw}
+	game_logHandler_sendLog("Saved %{_player}%'s stats: %{playerData::%{_player}%_SAVED_STATS}%")
+
+function game_playerStatsHandler_loadStats(player: player):
+	game_playerStatsHandler_loadStats_individualStat({_player}, "KILLS", 0)
+	game_playerStatsHandler_loadStats_individualStat({_player}, "DEATHS", 0)
+	game_playerStatsHandler_loadStats_individualStat({_player}, "MINED_BLOCKS", 0)
+	game_logHandler_sendLog("Loaded %{_player}%'s stats: %{playerData::%{_player}%_SAVED_STATS}%")
+
+function game_playerStatsHandler_loadStats_individualStat(player: player, stat: text, default: object):
+	if stringDatasAPI_isSet({playerData::%{_player}%_SAVED_STATS}, "PLAYER_%{_stat}%") is false:
+		set {-game_playerStatsHandler::%{_player}%_%{_stat}%} to {_default}
+		stop
+	set {-game_playerStatsHandler::%{_player}%_%{_stat}%} to (stringDatasAPI_getData({playerData::%{_player}%_SAVED_STATS}, "PLAYER_%{_stat}%") parsed as number)
