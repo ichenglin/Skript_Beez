@@ -62,6 +62,8 @@ function game_mobHandler_removeFromTargets(entity: entity):
 
 function game_mobHandler_rewardAttackers(entity: entity):
 	set {_entityUUID} to ({_entity}'s UUID)
+	if {-entityData::%{_entityUUID}%_LOOT_ITEMS} is "":
+		stop
 	loop {-game_mobHandler::%{_entityUUID}%_DAMAGE_TAKEN::*}:
 		set {_loopAttacker} to (loop-index parsed as player)
 		if {_loopAttacker} is online:
@@ -77,6 +79,24 @@ function game_mobHandler_rewardAttackers(entity: entity):
 				send "&eYou didn't do enough damage to get loot from &6%{-entityData::%{_entityUUID}%_NAME}%&e!" to {_loopAttacker}
 		delete {_loopAttacker}
 			
+function game_mobHandler_respawnMob(mob: entity):
+	set {_mobUUID} to ({_mob}'s UUID)
+	add 1 to {-entityData::%{_mobUUID}%_DEATH_COUNT}
+	delete {-game_mobHandler::%{_mobUUID}%_DAMAGE_TAKEN::*}
+	delete {-game_eventHandler::%{_mobUUID}%_MOB_SUFFOCATION_COUNT}
+	set {_deathLocation} to {-entityData::%{_mobUUID}%_SPAWN_LOCATION}
+	set {_deathLocation}'s y coords to 96
+	set {-game_healthHandler::%{_mobUUID}%_MOB_DIED} to true
+	game_healthbarHandler_remove({_mob})
+	wait 1 tick
+	game_healthbarHandler_teleport({_mob}, {_deathLocation})
+	wait 5 seconds
+	delete {-game_healthHandler::%{_mobUUID}%_MOB_DIED}
+	game_healthbarHandler_teleport({_mob}, {-entityData::%{_mobUUID}%_SPAWN_LOCATION})
+	wait 5 ticks
+	game_healthbarHandler_new({_mob})
+	wait 1 tick
+	game_healthHandler_heal({_mob})
 
 function game_mobHandler_killAll():
 	set {_mobList::*} to {-game_dataHandler::MOB_LIST} split by ":"

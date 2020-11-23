@@ -1,5 +1,7 @@
 function game_healthbarHandler_new(entity: entity):
 	set {_entityUUID} to ({_entity}'s UUID)
+	if {-game_healthHandler::%{_entityUUID}%_MOB_DIED} is set:
+		stop
 	if {-game_healthbarHandler::%{_entityUUID}%_BAR} is set:
 		game_healthbarHandler_remove({_entity})
 	game_logHandler_sendLog("Health bar created for %{_entity}%.")
@@ -30,12 +32,12 @@ function game_healthbarHandler_update(entity: entity):
 			set {_new} to "&c▊"
 		set {_barText} to "%{_barText}%%{_new}%"
 	if {_entity} is a player:
-		set {_damageDisplay} to (check [{_entity}'s tool is bow] ? {playerData::%{_entity}%_RANGED_DAMAGE} : {playerData::%{_entity}%_MELEE_DAMAGE})
+		set {_damageDisplay} to game_playerDisplayHandler_getPlayerDamageDisplay({_entity})
 		if {_entity}'s group is not "default":
 			set {_prefix} to (uncolored {_entity}'s prefix)
-			set {_name} to "%{_prefix}%%{_entity}%"
+			set {_name} to "%{_prefix}%%game_playerDisplayHandler_getPlayerName({_entity})%"
 		else:
-			set {_name} to "%{_entity}%"
+			set {_name} to "%game_playerDisplayHandler_getPlayerName({_entity})%"
 	else:
 		set {_damageDisplay} to {-entityData::%{_entityUUID}%_DAMAGE}
 		set {_name} to "%{-entityData::%{_entityUUID}%_NAME}%"

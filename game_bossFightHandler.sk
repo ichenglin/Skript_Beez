@@ -1,0 +1,61 @@
+function game_bossFightHandler_newBossFight(bossFightPlayers: players, bossFightEntityLinkID: text, bossFightMaximumTimeLengthSeconds: number, bossFightRewardText: text):
+	if {-game_bossFightHandler::%{_bossFightEntityLinkID}%_STATUS} is set:
+		stop
+	set {-game_bossFightHandler::%{_bossFightEntityLinkID}%_STATUS} to "FIGHTING"
+	set {_bossEntity} to {-game_dataHandler::%{_bossFightEntityLinkID}%_ENTITY_LINK_ID}
+	set {_bossEntityUUID} to ({_bossEntity}'s UUID)
+	set {-game_bossFightHandler::%{_bossFightEntityLinkID}%_PLAYERS_AMOUNT} to (amount of {_bossFightPlayers::*})
+	loop {_bossFightPlayers::*}:
+		set {_loopPlayer} to loop-value
+		set {_randomX} to (-78.5 + (random number between -7 and 7))
+		set {_randomZ} to (-96.5 + (random number between -7 and 7))
+		set {_randomLocation} to (location at ({_randomX}, 52.5, {_randomZ}) in world("minePvP"))
+		game_healthbarHandler_teleport({_loopPlayer}, {_randomLocation})
+		game_healthHandler_heal({_loopPlayer})
+		set {-game_bossFightHandler::%{_loopPlayer}%_CURRENT_BOSS_FIGHT} to {_bossFightEntityLinkID}
+	loop 5 times:
+		game_bossFightHandler_sendMessageToBossFightPlayers({_bossFightEntityLinkID}, "Boss will start targeting every boss fight players in %(6 - loop-number)% seconds!")
+		wait 1 second
+	loop {_bossFightPlayers::*}:
+		set {_loopPlayer} to loop-value
+		if {-game_bossFightHandler::%{_loopPlayer}%_CURRENT_BOSS_FIGHT} is {_bossFightEntityLinkID}:
+			set {-game_mobHandler::%{_bossEntityUUID}%_TARGETS::%{_loopPlayer}%} to {_loopPlayer}
+	set {_bossEntityPreviousDeaths} to {-entityData::%{_bossEntityUUID}%_DEATH_COUNT}
+	game_mobHandler_target({_bossEntity}, {-entityData::%{_bossEntityUUID}%_DEATH_COUNT})
+	loop {_bossFightMaximumTimeLengthSeconds} times:
+		if {_bossEntityPreviousDeaths} < {-entityData::%{_bossEntityUUID}%_DEATH_COUNT}:
+			set {_bossFightEndReason} to "BOSS_DIED"
+		else if {-game_bossFightHandler::%{_bossFightEntityLinkID}%_PLAYERS_AMOUNT} <= 0:
+			set {_bossFightEndReason} to "PLAYERS_DIED"
+		if {_bossFightEndReason} is set:
+			exit 1 loop
+		set {_remainSeconds} to ({_bossFightMaximumTimeLengthSeconds} - loop-number)
+		if {_remainSeconds} is 300 or 250 or 200 or 150 or 100 or 50 or 10 or 5 or 3 or 2 or 1:
+			game_bossFightHandler_sendMessageToBossFightPlayers({_bossFightEntityLinkID}, "Boss fight event is ending in %{_remainSeconds}% seconds!")
+		wait 1 second
+	if {_bossFightEndReason} is not set:
+		set {_bossFightEndReason} to "OUT_OF_TIME"
+	game_bossFightHandler_endBossFight({_bossFightPlayers::*}, {_bossFightEntityLinkID}, {_bossFightEndReason}, {_bossFightRewardText})
+
+function game_bossFightHandler_endBossFight(bossFightPlayers: players, bossFightEntityLinkID: text, bossFightEndReason: text, bossFightRewardText: text):
+	if {_bossFightEndReason} is "BOSS_DIED":
+		send "&bThe event boss have been defeated!" to all players
+		set {_bossRewardPlayer} to true
+	else if {_bossFightEndReason} is "PLAYERS_DIED":
+		send "&bAll boss fight players has been killed!" to all players
+	else if {_bossFightEndReason} is "OUT_OF_TIME":
+		send "&bEvent boss has left!" to all players
+	loop all players:
+		if {-game_bossFightHandler::%loop-player%_CURRENT_BOSS_FIGHT} is {_bossFightEntityLinkID}:
+			delete {-game_bossFightHandler::%loop-player%_CURRENT_BOSS_FIGHT}
+			game_healthbarHandler_teleport(loop-player, {-game_dataHandler::SPAWN_LOCATION})
+			if {_bossRewardPlayer} is set:
+				set {_loots::*} to game_dataHandler_public_textToItems({_bossFightRewardText}, loop-player)
+				give {_loots::*} to loop-player
+	game_healthHandler_death({_null}, {_bossEntity})
+	delete {-game_bossFightHandler::%{_bossFightEntityLinkID}%_STATUS}
+
+function game_bossFightHandler_sendMessageToBossFightPlayers(bossFightEntityLinkID: text, message: text):
+	loop all players:
+		if {-game_bossFightHandler::%loop-player%_CURRENT_BOSS_FIGHT} is {_bossFightEntityLinkID}:
+			send "&b%{_message}%" to loop-player

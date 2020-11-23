@@ -4,6 +4,7 @@
 # Health Regeneration: +10
 # Melee Damage: +10
 # Ranged Damage: +10
+# Magic Damage: +10
 # Protection: +10%
 # Movement Speed: +10%
 # Critical Chance: +50%
@@ -19,13 +20,14 @@ function game_equipmentHandler_updatePlayerEquipmentStats(player: player):
 	set {_allDamage} to game_equipmentHandler_getPlayerEquipItemStat({_player}, "All Damage")
 	set {playerData::%{_player}%_MELEE_DAMAGE} to (1 + game_equipmentHandler_getPlayerEquipItemStat({_player}, "Melee Damage") + {_allDamage})
 	set {playerData::%{_player}%_RANGED_DAMAGE} to (game_equipmentHandler_getPlayerEquipItemStat({_player}, "Ranged Damage") + {_allDamage})
+	set {playerData::%{_player}%_MAGIC_DAMAGE} to (game_equipmentHandler_getPlayerEquipItemStat({_player}, "Magic Damage") + {_allDamage})
 	set {playerData::%{_player}%_PROTECTION} to game_equipmentHandler_getPlayerEquipItemStat({_player}, "Protection")
 	set {playerData::%{_player}%_MOVEMENT_SPEED} to (0.2 * ((100 + game_equipmentHandler_getPlayerEquipItemStat({_player}, "Movement Speed")) / 100))
 	set {playerData::%{_player}%_CRITICAL_CHANCE} to (5 + game_equipmentHandler_getPlayerEquipItemStat({_player}, "Critical Chance"))
 	set {playerData::%{_player}%_CRITICAL_POWER} to (100 + game_equipmentHandler_getPlayerEquipItemStat({_player}, "Critical Power"))
 	set {playerData::%{_player}%_ARROW_RETURN} to game_equipmentHandler_getPlayerEquipItemStat({_player}, "Arrow Return")
 	set {playerData::%{_player}%_LUCK} to game_equipmentHandler_getPlayerEquipItemStat({_player}, "Luck")
-	set {_checkStats::*} to "HEALTH_MAX" and "HEALTH_REGENERATION" and "MELEE_DAMAGE" and "RANGED_DAMAGE" and "PROTECTION" and "MOVEMENT_SPEED" and "CRITICAL_CHANCE" and "CRITICAL_POWER" and "ARROW_RETURN" and "LUCK"
+	set {_checkStats::*} to "HEALTH_MAX" and "HEALTH_REGENERATION" and "MELEE_DAMAGE" and "RANGED_DAMAGE" and "MAGIC_DAMAGE" and "PROTECTION" and "MOVEMENT_SPEED" and "CRITICAL_CHANCE" and "CRITICAL_POWER" and "ARROW_RETURN" and "LUCK"
 	loop (amount of {_checkStats::*}) times:
 		set {_loopStat} to {_checkStats::%loop-number%}
 		set {playerData::%{_player}%_%{_loopStat}%} to (check [{playerData::%{_player}%_%{_loopStat}%} >= 0] ? {playerData::%{_player}%_%{_loopStat}%} : 0)

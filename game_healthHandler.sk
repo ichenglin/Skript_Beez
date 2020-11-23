@@ -30,9 +30,10 @@ function game_healthHandler_damage(attacker: entity, victim: entity, damage: num
 	if {_victim} is not a player:
 		set {_victimUUID} to ({_victim}'s UUID)
 		add {_damage} to {-game_mobHandler::%{_victimUUID}%_DAMAGE_TAKEN::%{_attacker}%}
-	if {_remainHealth} <= 0:
-		game_healthHandler_death({_attacker}, {_victim}, {_damageType})
-		stop
+	if {_victimHealth} > 0:
+		if {_remainHealth} <= 0:
+			game_healthHandler_death({_attacker}, {_victim}, {_damageType})
+			stop
 	game_logHandler_sendLog("%{_attacker}% attacked %{_victim}%, victim remain health: %{_remainHealth}%")
 	game_healthHandler_set({_victim}, {_remainHealth})
 	if {_victim} is a player:
@@ -55,6 +56,11 @@ function game_healthHandler_death(attacker: entity, victim: entity, damageType: 
 			add 1 to {-game_playerStatsHandler::%{_victim}%_DEATHS}
 		game_mobHandler_removeFromTargets({_victim})
 		game_playerDisplayHandler_sidebar_updatePlayerSidebar({_victim})
+		set {_currentBossFightID} to {-game_bossFightHandler::%{_victim}%_CURRENT_BOSS_FIGHT}
+		game_bossFightHandler_sendMessageToBossFightPlayers({_currentBossFightID}, "%{_victim}% has died! (%({-game_bossFightHandler::%{_currentBossFightID}%_PLAYERS_AMOUNT} - 1)% Players Remaining)")
+		if {_currentBossFightID} is set:
+			delete {-game_bossFightHandler::%{_victim}%_CURRENT_BOSS_FIGHT}
+			remove 1 from {-game_bossFightHandler::%{_currentBossFightID}%_PLAYERS_AMOUNT}
 		if {_attacker} is a player:
 			add 1 to {-game_playerStatsHandler::%{_attacker}%_KILLS}
 			game_playerDisplayHandler_sidebar_updatePlayerSidebar({_attacker})
@@ -64,23 +70,10 @@ function game_healthHandler_death(attacker: entity, victim: entity, damageType: 
 		wait 1 tick
 		game_healthbarHandler_teleport({_victim}, {-game_dataHandler::SPAWN_LOCATION})
 	else:
-		add 1 to {-entityData::%{_victimUUID}%_DEATH_COUNT}
 		game_mobHandler_rewardAttackers({_victim})
-		delete {-game_mobHandler::%{_victimUUID}%_DAMAGE_TAKEN::*}
-		set {_deathLocation} to {-entityData::%{_victimUUID}%_SPAWN_LOCATION}
-		set {_deathLocation}'s y coords to 96
-		game_healthbarHandler_remove({_victim})
-		wait 1 tick
-		game_healthbarHandler_teleport({_victim}, {_deathLocation})
+		game_mobHandler_respawnMob({_victim})
 	game_logHandler_sendLog("%{_attacker}% killed %{_victim}%.")
 	if {_victim} is a player:
-		game_healthHandler_heal({_victim})
-	else:
-		wait 5 seconds
-		game_healthbarHandler_teleport({_victim}, {-entityData::%{_victimUUID}%_SPAWN_LOCATION})
-		wait 5 ticks
-		game_healthbarHandler_new({_victim})
-		wait 1 tick
 		game_healthHandler_heal({_victim})
 
 function game_healthHandler_healthRegeneration(player: player):

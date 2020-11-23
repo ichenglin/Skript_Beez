@@ -1,0 +1,83 @@
+function game_playerVaultHandler_playerInteractVault(player: player, vaultBlockLocation: location):
+	set {_loopCount} to 0
+	while (true):
+		add 1 to {_loopCount}
+		if {-game_dataHandler::PLAYER_VAULT_BLOCK_LOCATION_%{_loopCount}%} is not set:
+			send "&cYou have interacted an unknown player vault!%nl%&cIf you believe this is an error please report to an administrator." to {_player}
+			stop
+		else if {-game_dataHandler::PLAYER_VAULT_BLOCK_LOCATION_%{_loopCount}%} is {_vaultBlockLocation}:
+			exit 1 loop
+	if game_playerVaultHandler_checkPlayerPurchasedVault({_player}, {_loopCount}) is false:
+		send "&cYou have not purchased this vault yet!" to {_player}
+		game_playerVaultHandler_playerPurchaseVault({_player}, {_loopCount})
+		stop
+	set {game_playerVaultHandler::%{_player}%_PLAYER_INTERACTING_VAULT} to "%{_player}'s UUID%_%{_loopCount}%"
+	game_playerVaultHandler_loadVault("%{_player}'s UUID%_%{_loopCount}%", {_player})
+
+function game_playerVaultHandler_playerPurchaseVault(player: player, vaultId: number):
+	open chest with 5 row named "Confirm Purchase Player Vault" to {_player}
+	loop 2 times:
+		loop 9 times:
+			format a gui slot ((((loop-number-1) - 1) * 36) + (loop-number-2) - 1) of {_player} with white glass named "&f" to do nothing
+	loop 2 times:
+		loop 3 times:
+			format a gui slot (9 + (((loop-number-1) - 1) * 8) + (((loop-number-2) - 1) * 9)) of {_player} with white glass named "&f" to do nothing
+	set {_purchaseCost::*} to game_dataHandler_public_textToItems({-game_dataHandler::PLAYER_VAULT_PURCHASE_COST_%{_vaultId}%}, {_null})
+	loop {_purchaseCost::*}:
+		set {_purchaseCostTextSplit::%loop-index%} to "&c%game_dataHandler_public_getItemDisplay(loop-value)%"
+	set {_purchaseCostText} to join {_purchaseCostTextSplit::*} with delimiter "||"
+	format a gui slot 22 of {_player} with book named "&ePurchase Player Vault" with lore "||&c&lPurchase Cost:||%{_purchaseCostText}%||&f||&eLeft-Click to Purchase" to close then run function game_playerVaultHandler_playerPurchaseVault_submitPurchaseRequest({_player}, {_vaultId})
+
+function game_playerVaultHandler_playerPurchaseVault_submitPurchaseRequest(player: player, vaultId: number):
+	set {_purchaseCost::*} to game_dataHandler_public_textToItems({-game_dataHandler::PLAYER_VAULT_PURCHASE_COST_%{_vaultId}%}, {_null})
+	set {_purchaseRequest} to game_shopHandler_itemShop_purchaseCostCheck({_player}, {_purchaseCost::*})
+	if {_purchaseRequest} is not "SUCCESS":
+		send "&cYou don't have enough items to purchase the vault!" to {_player}
+		stop
+	send "&eYou have successfully purchased the vault!" to {_player}
+	set {playerData::%{_player}%_PURCHASED_VAULT} to stringDatasAPI_setData("%{_player}'s UUID%_%{_vaultId}%", "%unixAPI_dateToUnix(now)%", {playerData::%{_player}%_PURCHASED_VAULT})
+
+function game_playerVaultHandler_checkPlayerPurchasedVault(player: player, vaultId: number) :: boolean:
+	if {-game_dataHandler::PLAYER_VAULT_PURCHASE_COST_%{_vaultId}%} is "":
+		return true
+	if stringDatasAPI_isSet({playerData::%{_player}%_PURCHASED_VAULT}, "%{_player}'s UUID%_%{_vaultId}%") is true:
+		return true
+	return false
+
+function game_playerVaultHandler_loadVault(vaultName: text, vaultDisplayPlayer: player):
+	if {-game_playerVaultHandler::%{_vaultDisplayPlayer}%_LOADING_VAULT} is set:
+		stop
+	set {-game_playerVaultHandler::%{_vaultDisplayPlayer}%_LOADING_VAULT} to true
+	send "&aLoading player vault data..." to {_vaultDisplayPlayer}
+	set {_inventorySlots::*} to stringDatasAPI_getDataNames({game_playerVaultHandler::%{_vaultName}%_VAULT})
+	set {_loopCount} to 0
+	loop {_inventorySlots::*}:
+		add 1 to {_loopCount}
+		set {_loopSlot} to (loop-value parsed as number)
+		set {_loopSlotItemData} to  stringDatasAPI_getData({game_playerVaultHandler::%{_vaultName}%_VAULT}, loop-value)
+		set {_loopSlotItemDataSplit::*} to {_loopSlotItemData} split by ":"
+		set {_loopSlotItemAmount} to ({_loopSlotItemDataSplit::2} parsed as number)	
+		set {_loopSlotItem} to ({_loopSlotItemAmount} of {-game_dataHandler::%{_loopSlotItemDataSplit::1}%})
+		set {_loadedInventoryItems::%loop-value%} to {_loopSlotItem}
+		if ({_loopCount} / 3) is floor({_loopCount} / 3):
+			wait 1 tick
+	send "&aSuccessfully loaded player vault." to {_vaultDisplayPlayer}
+	open chest with 5 row named "Player Vault" to {_vaultDisplayPlayer}
+	loop {_loadedInventoryItems::*}:
+		set slot (loop-index parsed as number) of {_vaultDisplayPlayer}'s current inventory to loop-value
+	delete {-game_playerVaultHandler::%{_vaultDisplayPlayer}%_LOADING_VAULT}
+
+function game_playerVaultHandler_saveVault(vaultName: text, vaultInventory: inventory):
+	set {_vaultInventoryData} to ""
+	loop 45 times:
+		set {_loopSlot} to (loop-number - 1)
+		set {_loopSlotItem} to (slot {_loopSlot} of {_vaultInventory})
+		if {_loopSlotItem} is not air:
+			set {_vaultInventoryData} to stringDatasAPI_setData("%{_loopSlot}%", "%game_playerVaultHandler_itemToId({_loopSlotItem})%", {_vaultInventoryData})
+	if {_vaultInventoryData} is "":
+		delete {game_playerVaultHandler::%{_vaultName}%_VAULT}
+	set {game_playerVaultHandler::%{_vaultName}%_VAULT} to {_vaultInventoryData}
+
+function game_playerVaultHandler_itemToId(item: item) :: text:
+	set {_itemData::*} to game_itemDataHandler_itemData_getDatas({_item}, "ID")
+	return "%{_itemData::1}%:%{_item}'s item amount%"

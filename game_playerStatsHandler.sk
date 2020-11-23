@@ -1,4 +1,7 @@
 function game_playerStatsHandler_saveStats(player: player):
+	if {playerData::%{_player}%_SAVED_STATS} is set:
+		if {-game_playerStatsHandler::%{_player}%_STATS_LOADED} is not set:
+			stop
 	add "KILLS" and "DEATHS" and "MINED_BLOCKS" to {_saveStatTypes::*}
 	loop {_saveStatTypes::*}:
 		set {_loopType} to {_saveStatTypes::%loop-index%}
@@ -11,6 +14,7 @@ function game_playerStatsHandler_loadStats(player: player):
 	game_playerStatsHandler_loadStats_individualStat({_player}, "DEATHS", 0)
 	game_playerStatsHandler_loadStats_individualStat({_player}, "MINED_BLOCKS", 0)
 	game_logHandler_sendLog("Loaded %{_player}%'s stats: %{playerData::%{_player}%_SAVED_STATS}%")
+	set {-game_playerStatsHandler::%{_player}%_STATS_LOADED} to now
 
 function game_playerStatsHandler_loadStats_individualStat(player: player, stat: text, default: object):
 	if stringDatasAPI_isSet({playerData::%{_player}%_SAVED_STATS}, "PLAYER_%{_stat}%") is false:

@@ -1,3 +1,7 @@
+command /rules [<text>]:
+	trigger:
+		send "&e[Beez Server Rules]%nl%%nl%&e1. &fAny kind of &eblacklisted modifications &fthat gives &eunfair advantages &fis not allowed, commonly known as &echeating&f.%nl%&e2. &fAny way of &eflooding server chat &fwith meaningless messages or include &eracism&f, &esexism&f, &eharassment &fcontent is not allowed.%nl%&e3. &fConnect to the server with &eanother account after being prohibited &fwill result in punishment length extension.%nl%&e4. &fAbusing &eglitches &for &espreading the instructions &fare not allowed, please &ereport bugs &fon our discord server or to a staff member.%nl%%nl%&e&lNOTE: &eBadlion Client&f, &eLunar Client&f, &eLounge Client&f, and other &eclient-based anti-cheat &fwill &cNOT &fbe considered when we suspend a user for rule ##1!%nl%" to executor
+
 command /itemShop [<text>] [<text>]:
 	trigger:
 		if arg 2 is not "NPC_CLICK":
@@ -26,16 +30,55 @@ command /cancelQuest [<text>]:
 			stop
 		game_questHandler_guiAction(executor, "NULL", "CANCEL_QUEST")
 
+command /event [<text>]:
+	trigger:
+		if arg 1 is not set:
+			send "&cUsage: /event join" to executor
+			stop
+		if arg 1 is not "join":
+			send "&cUsage: /event join" to executor
+			stop
+		set {_executorUUID} to (executor's UUID)
+		set {_latestEvent} to {-game_randomEventHandler::LATEST_EVENT}
+		if {-game_randomEventHandler::%{_latestEvent}%_BOSS_FIGHT_QUEUE} is not set:
+			send "&cThe event queue is no longer joinable!" to executor
+			stop
+		if {-game_randomEventHandler::%{_latestEvent}%_BOSS_FIGHT_PLAYERS::%{_executorUUID}%} is set:
+			send "&cYou have already joined the event!" to executor
+			stop
+		set {-game_randomEventHandler::%{_latestEvent}%_BOSS_FIGHT_PLAYERS::%{_executorUUID}%} to executor
+		send "&bYou have joined the event!" to executor
+
 command /myStats [<text>]:
 	trigger:
-		send "&e[Player Stats]%nl%&f%nl%&eHealth: &f%{playerData::%executor%_HEALTH}%&e/&f%{playerData::%executor%_HEALTH_MAX}%%nl%&eRegeneration: &f%ceil({playerData::%executor%_HEALTH_MAX} * ({playerData::%executor%_HEALTH_REGENERATION} / 100))%/sec &e(&f%{playerData::%executor%_HEALTH_REGENERATION}%%%&e)%nl%&eDamage: &f%{playerData::%executor%_DAMAGE}%%nl%&eProtection: &f%{playerData::%executor%_PROTECTION}%%%" to executor
+		send "&e[Player Stats]%nl%&f%nl%&eHealth: &f%{playerData::%executor%_HEALTH}%&e/&f%{playerData::%executor%_HEALTH_MAX}%%nl%&eRegeneration: &f%ceil({playerData::%executor%_HEALTH_MAX} * ({playerData::%executor%_HEALTH_REGENERATION} / 100))%/sec &e(&f%{playerData::%executor%_HEALTH_REGENERATION}%%%&e)%nl%&eMelee Damage: &f%{playerData::%executor%_MELEE_DAMAGE}%%nl%&eRanged Damage: &f%{playerData::%executor%_RANGED_DAMAGE}%%nl%&eMagic Damage: &f%{playerData::%executor%_MAGIC_DAMAGE}%%nl%&eProtection: &f%{playerData::%executor%_PROTECTION}%%%%nl%&eMovement Speed: &f%(({playerData::%executor%_MOVEMENT_SPEED} / 0.2) * 100)%%%%nl%&eCritical Chance: &f%{playerData::%executor%_CRITICAL_CHANCE}%%%%nl%&eCritical Power: &f%{playerData::%executor%_CRITICAL_POWER}%%%%nl%&eArrow Return: &f%{playerData::%executor%_ARROW_RETURN}%%%" to executor
 
-command /reloadInventory [<text>]:
+command /updatePlayer [<text>]:
 	trigger:
-		game_playerInventoryHandler_saveInventory(executor)
+		if {-game_eventHandler::%executor%_UPDATE_PLAYER} is set:
+			send "&cPlease wait for the previous update player process to complete!" to executor
+			stop
+		set {-game_eventHandler::%executor%_UPDATE_PLAYER} to now
+		send "&aReloading player in-game data..." to executor
+		game_playerInventoryHandler_saveInventory(executor)		
 		wait 5 ticks
 		game_playerInventoryHandler_loadInventory(executor)
-		send "&aReloaded your inventory!" to executor
+		wait 5 ticks
+		send "&aReloading player display settings..." to executor
+		game_healthbarHandler_new(executor)
+		wait 5 ticks
+		game_healthbarHandler_update(executor)
+		wait 5 ticks
+		game_equipmentHandler_updatePlayerEquipmentStats(executor)
+		wait 5 ticks
+		game_playerDisplayHandler_sidebar_newPlayerSidebar(executor, 0)
+		wait 5 ticks
+		game_playerDisplayHandler_sidebar_updatePlayerSidebar(executor)
+		wait 5 ticks
+		game_invisiblePressurePlateHandler_hideAllFromPlayer(executor)
+		game_playerDisplayHandler_playerTablist(executor)
+		send "&aReload completed!" to executor
+		delete {-game_eventHandler::%executor%_UPDATE_PLAYER}
 
 command /redeemCode [<text>]:
 	trigger:
@@ -157,6 +200,10 @@ command /wipePlayerData [<offline player>]:
 		delete {playerData::%{_wipedDataPlayer}%_ACTIVE_QUEST_DATA}
 		delete {-game_questHandler::%{_wipedDataPlayer}%_ACTIVE_QUEST}
 		delete {playerData::%{_wipedDataPlayer}%_CODE_DATA}
+		# NEED TO EDIT
+		set {_playerVaultName} to "%{_wipedDataPlayer}'s UUID%_1"
+		delete {game_playerVaultHandler::%{_playerVaultName}%_VAULT}
+		delete {playerData::%{_wipedDataPlayer}%_PURCHASED_VAULT}
 		if {_wipedDataPlayer} is online:
 			clear {_wipedDataPlayer}'s inventory
 			game_equipmentHandler_updatePlayerEquipmentStats({_wipedDataPlayer})
@@ -188,7 +235,7 @@ command /music [<text>]:
 		game_musicHandler_playRepeat(executor, now)
 		send "&eYou have turned &aon &emusic." to executor
 
-command /vanish:
+command /vanish [<text>]:
 	aliases: /v
 	trigger:
 		if executor doesn't have permission "group.helper":
@@ -203,6 +250,37 @@ command /vanish:
 		loop all players:
 			game_vanishHandler_updateVanishedPlayers(loop-player)
 
+command /nick [<text>]:
+	aliases: /v
+	trigger:
+		if executor doesn't have permission "group.helper":
+			send "&cYou are not allowed to use this command!" to executor
+			stop
+		if arg 1 is not set:
+			send "&cUsage: /nick <nickname/clear/off>" to executor
+			stop
+		set {_executorUUID} to (executor's UUID)
+		if arg 1 is "clear" or "off":
+			if {playerData::%{_executorUUID}%_NICKNAME} is not set:
+				send "&cYou currently don't have any nickname set!" to executor
+				stop
+			delete {playerData::%{_executorUUID}%_NICKNAME}
+		else:
+			if game_playerDisplayHandler_checkAlphanumeric(arg 1) is false:
+				send "&cYou are only allowed to use letters and numbers in nickname!" to executor
+				stop
+			if (arg 1) is "%executor%":
+				send "&cYour nickname is same as your username!%nl%&cUse ""/nick clear"" to clear your nickname." to executor
+				stop
+			set {_nicknameSplit::*} to (arg 1) split by ""
+			if (amount of {_nicknameSplit::*}) > 16:
+				send "&cYou are not allowed to have nickname over 16 characters!" to executor
+				stop
+			set {playerData::%{_executorUUID}%_NICKNAME} to (arg 1)
+		game_healthbarHandler_update(executor)
+		game_playerDisplayHandler_playerTablist(executor)
+		send "&eYour display name is now &6%game_playerDisplayHandler_getPlayerName(executor)%&e." to executor
+
 command /resetMines [<text>]:
 	trigger:
 		if executor is not a op:
@@ -214,6 +292,58 @@ command /resetMines [<text>]:
 command /beez-vote [<text>]:
 	trigger:
 		send "&bVote for us at <url:https://playerservers.com/server/Beez>https://playerservers.com/server/Beez<reset>&b." to executor
+
+command /announcement [<text>]:
+	trigger:
+		if executor is not a op:
+			send "&cYou are not allowed to use this command!" to executor
+			stop
+		if arg 1 is not set:
+			send "&cUsage: /announcement <message>" to executor
+			stop
+		send "&b[Announcement] %arg 1%" to all players
+
+command /getGlitchedPlayerQuestData [<text>]:
+	trigger:
+		if executor is not a op:
+			send "&cYou are not allowed to use this command!" to executor
+			stop
+		set {_loopCount} to 0
+		loop all offline players:
+			add 1 to {_loopCount}
+			set {_loopPlayer} to loop-value
+			if {_loopPlayer} is online:
+				game_questHandler_saveData({_loopPlayer})
+			set {_loopPlayerActiveQuest} to stringDatasAPI_getData({playerData::%{_loopPlayer}%_ACTIVE_QUEST_DATA}, "ACTIVE_QUEST")
+			if {_loopPlayerActiveQuest} is not set:
+				set {_invalid} to true
+			set {_loopPlayerActiveQuestSplit::*} to {_loopPlayerActiveQuest} split by "_"
+			set {_loopPlayerActiveQuestSplitAmount} to (amount of {_loopPlayerActiveQuestSplit::*})
+			set {_loopPlayerActiveQuestLevel} to ({_loopPlayerActiveQuestSplit::%{_loopPlayerActiveQuestSplitAmount}%} parsed as number)
+			delete {_loopPlayerActiveQuestSplit::%{_loopPlayerActiveQuestSplitAmount}%}
+			set {_loopPlayerActiveQuestType} to join {_loopPlayerActiveQuestSplit::*} with delimiter "_"
+			set {_playerQuestCompletedLevel} to (stringDatasAPI_getData({playerData::%{_loopPlayer}%_COMPLETED_QUEST_DATA}, {_loopPlayerActiveQuestType}) parsed as number)
+			if {_playerQuestCompletedLevel} is not set:
+				set {_invalid} to true
+			if {_invalid} is not set:
+				if {_loopPlayerActiveQuestLevel} <= {_playerQuestCompletedLevel}:
+					send "%{_loopPlayer}% &c- &fC=%{_playerQuestCompletedLevel}% &c- &fA=%{_loopPlayerActiveQuestLevel}%%nl%&cDATA-C: &f%{playerData::%{_loopPlayer}%_COMPLETED_QUEST_DATA}%%nl%&cDATA-A: &f%{playerData::%{_loopPlayer}%_ACTIVE_QUEST_DATA}%" to executor
+			delete {_loopPlayerActiveQuest}
+			delete {_playerQuestCompletedLevel}
+			delete {_invalid}
+		if ({_loopCount} / 30) is floor({_loopCount} / 30):
+			wait 1 tick
+
+command /guarenteeBossFightEvent [<text>]:
+	trigger:
+		if executor is not a op:
+			send "&cYou are not allowed to use this command!" to executor
+			stop
+		if {-game_eventHandler::GUARENTEE_BOSS_FIGHT_EVENT} is set:
+			send "&cBoss fight event is alraedy guarentee in less than 6 minutes!" to executor
+			stop
+		set {-game_eventHandler::GUARENTEE_BOSS_FIGHT_EVENT} to true
+		send "&eYou have set next boss fight event to be guarenteed!" to executor
 
 every 1 second:
 	set {-game_eventHandler::MINE_RESET_COUNTDOWN} to (check [{-game_eventHandler::MINE_RESET_COUNTDOWN} is set] ? {-game_eventHandler::MINE_RESET_COUNTDOWN} : 121)
@@ -240,16 +370,22 @@ every 1 minute:
 
 every 3 minutes:
 	set {_autoBroadcastRandomID} to (random integer between 1 and {-game_dataHandler::AUTO_BROADCAST_AMOUNT})
-	send "&b[Auto-Broadcast] %{-game_dataHandler::AUTO_BROADCAST_MESSAGE_%{_autoBroadcastRandomID}%}%" to all players
+	send "&b[TIP] %{-game_dataHandler::AUTO_BROADCAST_MESSAGE_%{_autoBroadcastRandomID}%}%" to all players
 	set {_airdropButtonChance} to (random integer between 1 and 5)
 	if {_airdropButtonChance} is 1:
 		game_randomEventHandler_airDrop_spawnButtonRandomLocation()
-	set {_mobUUID::*} to {-game_dataHandler::MOB_LIST} split by ":"
-	loop {_mobUUID::*}:
-		set {_loopMobUUID} to {_mobUUID::%loop-index%}
-		game_healthbarHandler_update({-entityData::%{_loopMobUUID}%_ENTITY})
-	loop all players:
-		game_healthbarHandler_update(loop-player)
+	game_leaderboardHandler_updateTopMinedBlocksLeaderboard()
+
+every 30 seconds:
+	game_eventHandler_updateAllHealthbar()
+
+every 6 minutes:
+	set {_bossFightChance} to (random integer between 1 and 4)
+	if {-game_eventHandler::GUARENTEE_BOSS_FIGHT_EVENT} is set:
+		delete {-game_eventHandler::GUARENTEE_BOSS_FIGHT_EVENT}
+		game_randomEventHandler_bossFight_newBossFight("EVENT_BOSS_1", "TICKET_ITEM:1~2,ROTTEN_BOOTS_1_ITEM:1:1")
+	else if {_bossFightChance} is 1:
+		game_randomEventHandler_bossFight_newBossFight("EVENT_BOSS_1", "TICKET_ITEM:1~2,ROTTEN_BOOTS_1_ITEM:1:1")
 
 on block break:
 	set {_playerTool} to player's tool
@@ -310,6 +446,11 @@ on rightclick:
 	else if clicked block is set:
 		if clicked block is ender chest:
 			game_crateHandler_gui(player)
+		else if clicked block is ENDER_PORTAL_FRAME:
+			if {game_playerVaultHandler::%player%_PLAYER_INTERACTING_VAULT} is set:
+				stop
+			game_playerVaultHandler_playerInteractVault(player, (clicked block's location))
+			play sound "block.dispenser.fail" with volume 99999 and pitch 1 at (player's location) for player
 		else if "%clicked block's location%" is "%{gameData::AIRDROP_BUTTON_LOCATION}%":
 			set clicked block to air
 			delete {gameData::AIRDROP_BUTTON_LOCATION}
@@ -322,32 +463,43 @@ on rightclick:
 
 on inventory click:
 	if clicked slot is 40:
-		cancel event
-		stop
+		if "%inventory name of current inventory of player%" is not "Player Vault":
+			cancel event
+			stop
 	if inventory name of current inventory of player is "container.crafting":
 		# nothing
-	else if "%clicked inventory%" is not "inventory of %player%":
+#	else if "%clicked inventory%" is not "inventory of %player%":
+#		# nothing
+	else if "%inventory name of current inventory of player%" is "Player Vault":
 		# nothing
 	else:
-		send "&cYou are not allowed to interact with your inventory at this time!" to player
+#		send "&cYou are not allowed to interact with your inventory at this time!" to player
 		cancel event
 	wait 1 tick
 	game_equipmentHandler_updatePlayerEquipmentStats(player)
 
+on inventory close:
+	if {game_playerVaultHandler::%player%_PLAYER_INTERACTING_VAULT} is not set:
+		stop
+	game_playerVaultHandler_saveVault({game_playerVaultHandler::%player%_PLAYER_INTERACTING_VAULT}, event-inventory)
+	delete {game_playerVaultHandler::%player%_PLAYER_INTERACTING_VAULT}
+	play sound "block.dispenser.fail" with volume 99999 and pitch 1 at (player's location) for player
+
 on drop:
-	if game_itemDataHandler_itemType_getType(event-item) is "PICKAXE" or "AXE":
-		cancel event
-		send "&cYou can't drop your pickaxe!" to player
-		stop
-	if inventory name of current inventory of player is "container.crafting":
-		game_equipmentHandler_updatePlayerEquipmentStats(player)
-		stop
+#	if game_itemDataHandler_itemType_getType(event-item) is "PICKAXE" or "AXE":
+#		cancel event
+#		send "&cYou can't drop your pickaxe!" to player
+#		stop
+#	if inventory name of current inventory of player is "container.crafting":
+#		game_equipmentHandler_updatePlayerEquipmentStats(player)
+#		stop
 	cancel event
 
 on pickup:
 	cancel event
 
 on chat:
+	set {_playerUUID} to (player's UUID)
 	set {_playerMessageSplit::*} to message split by " "
 	loop {_playerMessageSplit::*}:
 		set {_withoutBox} to {_playerMessageSplit::%loop-index%}
@@ -385,6 +537,10 @@ on chat:
 		delete {_itemsInBank}
 		delete {_illegalFormula}
 	set {_playerMessage} to join {_playerMessageSplit::*} with delimiter " "
+	if {-game_leaderboardHandler_playerRanked::%{_playerUUID}%} is set:
+		set {_leaderboardRankedDisplay} to " &e«&f##%{-game_leaderboardHandler_playerRanked::%{_playerUUID}%}%&e»"
+	else:
+		set {_leaderboardRankedDisplay} to ""
 	if player is a op:
 		if {_playerMessage} contains "&":
 			set {_colorcodeCheck::*} to {_playerMessage} split by ""
@@ -395,7 +551,7 @@ on chat:
 					if {_colorcodeCheck::%{_nextCharNum}%} is "0" or "1" or "2" or "3" or "4" or "5" or "6" or "7" or "8" or "9" or "a" or "b" or "c" or "d" or "e" or "f":
 						set {_colorcodeCheck::%loop-number%} to "§"
 			set {_playerMessage} to join {_colorcodeCheck::*} with delimiter ""
-	set chat format to "%player's prefix%%player% &f%{_playerMessage}%"
+	set chat format to "%player's prefix%%game_playerDisplayHandler_getPlayerName(player)%%{_leaderboardRankedDisplay}% &f%{_playerMessage}%"
 
 on script load:
 	delete {-game_eventHandler::LOADED}
@@ -412,7 +568,10 @@ on script unload:
 		game_playerStatsHandler_saveStats(loop-player)
 
 on join:
-	set join message to "&2&lJOIN! &a%player%"
+	if player's uuid is "2bbd185f-8124-4339-b5ae-db9a4c614fd5":
+		set join message to ""
+	else:
+		set join message to "&2&lJOIN! &a%player%"
 	wait 5 ticks
 	game_playerInventoryHandler_loadInventory(player)
 	game_playerStatsHandler_loadStats(player)
@@ -455,12 +614,20 @@ on join:
 		send "&f%nl%&cYour log have been automatically turned on as you are opped.%nl%&cUse command ""/log"" to toggle your log.%nl%&f" to player
 
 on quit:
-	set quit message to "&4&lQUIT! &c%player%"
+	if player's uuid is "2bbd185f-8124-4339-b5ae-db9a4c614fd5":
+		set quit message to ""
+	else:
+		set quit message to "&4&lQUIT! &c%player%"
 	delete {-game_playerDisplayHandler::%player%_SIDEBAR_LOADED}
 	game_playerInventoryHandler_saveInventory(player)
 	game_playerStatsHandler_saveStats(player)
 	game_questHandler_saveData(player)
 	game_healthbarHandler_remove(player)
+	set {_currentBossFightID} to {-game_bossFightHandler::%player%_CURRENT_BOSS_FIGHT}
+	if {_currentBossFightID} is set:
+		delete {-game_bossFightHandler::%player%_CURRENT_BOSS_FIGHT}
+		remove 1 from {-game_bossFightHandler::%{_currentBossFightID}%_PLAYERS_AMOUNT}
+	game_bossFightHandler_sendMessageToBossFightPlayers({_currentBossFightID}, "%player% has left! (%({-game_bossFightHandler::%{_currentBossFightID}%_PLAYERS_AMOUNT} - 1)% Players Remaining)")
 
 on item spawn:
 	cancel event
@@ -484,6 +651,8 @@ on shoot:
 
 on damage:
 	set damage to 0
+	if victim is armor stand:
+		stop
 	if attacker and victim is a player:
 		if game_dataHandler_public_checkInArea((attacker's location), "SPAWN") or game_dataHandler_public_checkInArea((victim's location), "SPAWN") is true:
 			cancel event
@@ -509,6 +678,13 @@ on damage:
 	else if {_damageCause} is "void":
 		game_healthHandler_death({_null}, victim)
 		stop
+	else if {_damageCause} is "suffocation":
+		if victim is not a player:
+			set {_victimUUID} to ({_victim}'s UUID)
+			set {-game_eventHandler::%{_victimUUID}%_MOB_SUFFOCATION_COUNT} to (check [{-game_eventHandler::%{_victimUUID}%_MOB_SUFFOCATION_COUNT} is set] ? {-game_eventHandler::%{_victimUUID}%_MOB_SUFFOCATION_COUNT} : 0)
+			add 1 to {-game_eventHandler::%{_victimUUID}%_MOB_SUFFOCATION_COUNT}
+			if {-game_eventHandler::%{_victimUUID}%_MOB_SUFFOCATION_COUNT} >= 10:
+				game_mobHandler_respawnMob(victim)
 	set damage delay of victim to 1 tick
 
 on swap hand item:
@@ -530,9 +706,30 @@ on xp spawn:
 on step on pressure plate:
 	game_invisiblePressurePlateHandler_runAction(player, (event-block's location))
 
+on spawn:
+	set {_spawnReason} to "%spawn reason%"
+	if {_spawnReason} is "BREEDING":
+		cancel event
+
 function game_eventHandler_checkArrowReturn(player: player) :: boolean:
 	set {_arrowReturnChance} to {playerData::%{_player}%_ARROW_RETURN}
 	set {_random} to (random number between 0 and 100)
 	if {_arrowReturnChance} >= {_random}:
 		return true
 	return false
+
+function game_eventHandler_updateAllHealthbar():
+	kill all area effect clouds
+	set {_mobUUID::*} to {-game_dataHandler::MOB_LIST} split by ":"
+	add (all players) to {_healthbarUpdateEntityList::*}
+	loop {_mobUUID::*}:
+		set {_loopMobUUID} to {_mobUUID::%loop-index%}
+		set {_loopMob} to {-entityData::%{_loopMobUUID}%_ENTITY}
+		add {_loopMob} to {_healthbarUpdateEntityList::*}
+	set {_loopCount} to 0
+	loop {_healthbarUpdateEntityList::*}:
+		add 1 to {_loopCount}
+		game_healthbarHandler_new(loop-value)
+		game_healthbarHandler_update(loop-value)
+		if ({_loopCount} / 5) is floor({_loopCount} / 5):
+			wait 1 tick

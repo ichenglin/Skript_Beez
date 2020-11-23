@@ -1,0 +1,38 @@
+function game_leaderboardHandler_updateTopMinedBlocksLeaderboard():
+	set {_loopNumber} to 0
+	loop all offline players:
+		set {_loopPlayerUUID} to loop-value's uuid
+		set {_loopPlayerMinedBlocksText} to stringDatasAPI_getData({playerData::%{_loopPlayerUUID}%_SAVED_STATS}, "PLAYER_MINED_BLOCKS")
+		if {_loopPlayerMinedBlocksText} is set:
+			if {_minedBlocksSequence::%{_loopPlayerMinedBlocksText}%} is set:
+				set {_minedBlocksSequence::%{_loopPlayerMinedBlocksText}%} to "%{_minedBlocksSequence::%{_loopPlayerMinedBlocksText}%}%,%{_loopPlayerUUID}%"
+			else:
+				set {_minedBlocksSequence::%{_loopPlayerMinedBlocksText}%} to {_loopPlayerUUID}
+		delete {_loopPlayerMinedBlocksText}
+		if ({_loopNumber} / 100) is floor({_loopNumber} / 100):
+			wait 1 tick
+	set {_loopNumber} to 0
+	loop {_minedBlocksSequence::*}:
+		add 1 to {_loopNumber}
+		if {_reversedMinedBlocksRaw} is set:
+			set {_reversedMinedBlocksRaw} to "%loop-index%,%{_reversedMinedBlocksRaw}%"
+		else:
+			set {_reversedMinedBlocksRaw} to loop-index
+		if ({_loopNumber} / 100) is floor({_loopNumber} / 100):
+			wait 1 tick
+	set {_reversedMinedBlocksList::*} to {_reversedMinedBlocksRaw} split by ","
+	set {_loopNumber} to 0
+	loop {_reversedMinedBlocksList::*}:
+		add 1 to {_loopNumber}
+		set {_loopMinedBlocks} to ({_reversedMinedBlocksList::%loop-index%} parsed as number)
+		set {_loopMinedBlocksUUIDs::*} to {_minedBlocksSequence::%{_loopMinedBlocks}%} split by ","
+		add {_loopMinedBlocksUUIDs::*} to {_topMinedBlocksList::*}
+		if ({_loopNumber} / 100) is floor({_loopNumber} / 100):
+			wait 1 tick
+	delete {-game_leaderboardHandler_playerRanked::*}
+	loop 10 times:
+		set {_loopLeaderboardPlayerUUID} to {_topMinedBlocksList::%loop-number%}
+		set {_loopLeaderboardPlayer} to ("%{_loopLeaderboardPlayerUUID}%" parsed as offline player)
+		set {_loopLeaderboardPlayerMinedBlocks} to (stringDatasAPI_getData({playerData::%{_loopLeaderboardPlayerUUID}%_SAVED_STATS}, "PLAYER_MINED_BLOCKS") parsed as number)
+		execute console command "hd setline mined_blocks_leaderboard %(loop-number + 1)% &e(&f##%loop-number%&e) &f%{_loopLeaderboardPlayer}% &e - &f%game_playerDisplayHandler_getNumberDigitDisplay({_loopLeaderboardPlayerMinedBlocks})%"
+		set {-game_leaderboardHandler_playerRanked::%{_loopLeaderboardPlayerUUID}%} to loop-number

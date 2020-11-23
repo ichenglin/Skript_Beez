@@ -67,3 +67,19 @@ function game_randomEventHandler_airDrop_checkValid(location: location) :: boole
 
 function game_randomEventHandler_airDrop_locationToText(location: location) :: text:
 	return "%{_location}'s x coords%_%{_location}'s y coords%_%{_location}'s z coords%"
+
+function game_randomEventHandler_bossFight_newBossFight(bossFightEntityLinkID: text, bossFightRewardText: text):
+	set {-game_randomEventHandler::LATEST_EVENT} to {_bossFightEntityLinkID}
+	delete {-game_randomEventHandler::%{_bossFightEntityLinkID}%_BOSS_FIGHT_PLAYERS::*}
+	set {-game_randomEventHandler::%{_bossFightEntityLinkID}%_BOSS_FIGHT_QUEUE} to true
+	send "%nl%&9&lEVENT BOSS! &bZombie horse boss has appeared! Join the boss fight with ""/event join"" for rewards!%nl%" to all players
+	loop 30 times:
+		if (30 - loop-number) is 30 or 15 or 10 or 5:
+			send "&bBoss fight is starting in %(30 - loop-number)% seconds!" to all players
+		wait 1 second
+	delete {-game_randomEventHandler::%{_bossFightEntityLinkID}%_BOSS_FIGHT_QUEUE}
+	if {-game_randomEventHandler::%{_bossFightEntityLinkID}%_BOSS_FIGHT_PLAYERS::*} is set:
+		send "&bBoss fight has started!" to all players
+		game_bossFightHandler_newBossFight({-game_randomEventHandler::%{_bossFightEntityLinkID}%_BOSS_FIGHT_PLAYERS::*}, {_bossFightEntityLinkID}, 300, {_bossFightRewardText})
+		stop
+	send "&bBoss fight canceled due to no players joined!" to all players

@@ -98,8 +98,11 @@ function game_shopHandler_itemShop_getItemCost(itemID: text) :: objects:
 function game_shopHandler_itemUpgrade_gui(player: player, item: item, itemSlot: number):
 	set {_itemData::*} to game_itemDataHandler_itemData_getDatas({_item}, ("ID" and "LEVEL"))
 	set {_nextItemLevel} to (({_itemData::2} parsed as number) + 1)
-	set {_nextItemID} to {_itemData::1}
-	replace all "%{_itemData::2}%" with "%{_nextItemLevel}%" in {_nextItemID}
+	if {_itemData::2} is set:
+		set {_nextItemID} to {_itemData::1}
+		replace all "%{_itemData::2}%" with "%{_nextItemLevel}%" in {_nextItemID}
+	else:
+		set {_nextItemID} to "NONE"
 	if {-game_dataHandler::%{_nextItemID}%} is set:
 		set {_upgradeCostID} to {_nextItemID}
 		replace all "_ITEM" with "_UPGRADE_COST" in {_upgradeCostID}

@@ -1,5 +1,5 @@
-function game_weaponHandler_weapon_getWeapon(name: text, level: number, levelStats: text, weaponItem: item) :: item:
+function game_weaponHandler_weapon_getWeapon(name: text, level: number, weaponClass: text, levelStats: text, weaponItem: item) :: item:
 	set {_weaponItem} to (unbreakable {_weaponItem} with hidden enchants)
 	set {_weaponItem} to ({_weaponItem} without any NBT)
-	set {_weaponItem} to ({_weaponItem} named {_name} with lore "&7&oWeapon||&f||&eLevel: &f%{_level}%||&f||%{_levelStats}%")
+	set {_weaponItem} to ({_weaponItem} named {_name} with lore "&7&oWeapon||&f||&eClass: &f%{_weaponClass}%||&eLevel: &f%{_level}%||&f||%{_levelStats}%")
 	return {_weaponItem}

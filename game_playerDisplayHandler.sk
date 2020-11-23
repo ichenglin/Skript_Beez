@@ -1,7 +1,6 @@
 function game_playerDisplayHandler_playerActionbar(player: player):
-	set {_damageDisplay} to (check [{_player}'s tool is bow] ? {playerData::%{_player}%_RANGED_DAMAGE} : {playerData::%{_player}%_MELEE_DAMAGE})
 	set {_boosterDisplay} to (check [{playerData::%{_player}%_PERSONAL_BOOSTER_TYPE} is set] ? "          &b&l✯ %game_boosterHandler_getBoosterName({playerData::%{_player}%_PERSONAL_BOOSTER_TYPE})%" : "")
-	send actionbar "&c&l❤ %ceil({playerData::%{_player}%_HEALTH})%/%{playerData::%{_player}%_HEALTH_MAX}%          &6&l✠ %{playerData::%{_player}%_PROTECTION}%%%          &a&l✦ %{_damageDisplay}%%{_boosterDisplay}%" to {_player}
+	send actionbar "&c&l❤ %ceil({playerData::%{_player}%_HEALTH})%/%{playerData::%{_player}%_HEALTH_MAX}%          &6&l✠ %{playerData::%{_player}%_PROTECTION}%%%          &a&l✦ %game_playerDisplayHandler_getPlayerDamageDisplay({_player})%%{_boosterDisplay}%" to {_player}
 
 function game_playerDisplayHandler_playerHealth(player: player):
 	set {_remainHearts} to (ceil({playerData::%{_player}%_HEALTH} / {playerData::%{_player}%_HEALTH_MAX} * 20) / 2)
@@ -19,7 +18,7 @@ function game_playerDisplayHandler_playerBlood(player: player):
 		drawDot count 10, particle blockdust, material redstone block, center {_entityLocation}, visibleRange 100
 
 function game_playerDisplayHandler_playerTablist(player: player):
-	set ("%{_player}%" parsed as player)'s tablist name to "%{_player}'s prefix%%{_player}%"
+	set ("%{_player}%" parsed as player)'s tablist name to "%{_player}'s prefix%%game_playerDisplayHandler_getPlayerName({_player})%"
 
 function game_playerDisplayHandler_sidebar_newPlayerSidebar(player: player, lines: number = 0):
 	set {_sidebarID} to "%{_player}'s UUID%_SIDEBAR"
@@ -85,3 +84,41 @@ function game_playerDisplayHandler_sidebar_updatePlayerSidebar(player: player):
 		set text of id "%{_sidebarID}%_LINE_%({_skipLineID} - 3)%" to "&fPlayer KDR: &a%{_kdr}%"
 		set text of id "%{_sidebarID}%_LINE_%({_skipLineID} - 4)%" to "&fMined Blocks: &a%{-game_playerStatsHandler::%{_player}%_MINED_BLOCKS}%"
 		set text of id "%{_sidebarID}%_LINE_%({_skipLineID} - 5)%" to "&4"
+
+function game_playerDisplayHandler_getNumberDigitDisplay(number: number) :: text:
+	set {_numberText} to "%{_number}%"
+	set {_numberTextDigits::*} to {_numberText} split by ""
+	set {_numberTextDigitAmount} to ((amount of {_numberTextDigits::*}) - 1)
+	set {_delimiterAmount} to floor(({_numberTextDigitAmount} - 1) / 3)
+	set {_numberDisplay} to ""
+	loop {_numberTextDigitAmount} times:
+		set {_loopDigit} to ({_numberTextDigitAmount} - loop-number + 1)
+		if loop-number is 1:
+			set {_numberDisplay} to "%{_numberTextDigits::%{_loopDigit}%}%%{_numberDisplay}%"
+		else if ((loop-number - 1) / 3) is floor((loop-number - 1) / 3):
+			set {_numberDisplay} to "%{_numberTextDigits::%{_loopDigit}%}%,%{_numberDisplay}%"
+		else:
+			set {_numberDisplay} to "%{_numberTextDigits::%{_loopDigit}%}%%{_numberDisplay}%"
+	return {_numberDisplay}
+
+function game_playerDisplayHandler_checkAlphanumeric(text: text) :: boolean:
+	# This function is made due to Skript version 2.2-dev36 doesn't support the condition "is alphanumeric" so I made one myself
+	set {_text} to regex replace all pattern "[a-z,A-Z,0-9]" with "" in {_text}
+	if {_text} is "":
+		return true
+	return false
+
+function game_playerDisplayHandler_getPlayerName(player: offline player) :: text:
+	set {_playerUUID} to ({_player}'s UUID)
+	if {playerData::%{_playerUUID}%_NICKNAME} is set:
+		return {playerData::%{_playerUUID}%_NICKNAME}
+	else:
+		return "%{_player}%"
+
+function game_playerDisplayHandler_getPlayerDamageDisplay(player: offline player) :: number:
+	set {_playerToolData::*} to game_itemDataHandler_itemData_getDatas(({_player}'s tool), "CLASS")
+	if {_playerToolData::1} is set:
+		set {_damageDisplay} to {playerData::%{_player}%_%{_playerToolData::1}%_DAMAGE}
+	else:
+		set {_damageDisplay} to {playerData::%{_player}%_MELEE_DAMAGE}
+	return {_damageDisplay}
